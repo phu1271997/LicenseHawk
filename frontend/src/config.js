@@ -7,6 +7,6 @@
 //   CHAIN = "simulator" -> localnet / simulator
 
 export const CONTRACT_ADDRESS =
-  import.meta.env.VITE_CONTRACT_ADDRESS || "TO_BE_FILLED_AFTER_DEPLOY";
+  import.meta.env.VITE_CONTRACT_ADDRESS || "0xA47edd22962bc74eE2f611f4318F175Ca0dBf94A";
 
 export const CHAIN = import.meta.env.VITE_CHAIN || "studio";

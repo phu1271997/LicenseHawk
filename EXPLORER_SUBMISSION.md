@@ -82,7 +82,7 @@ Open **Rulings Index** → refresh → click your new case. The opinion card sho
 Rulings Index shows three RESOLVED cases with distinct verdicts: one INFRINGEMENT_CONFIRMED with an ADD_ATTRIBUTION remedy, one NO_INFRINGEMENT, one RETALIATORY_CLAIM. Each opinion cites a specific license clause and gives payout_claimant + payout_respondent equal to the bond pool. Explorer address page shows adjudicate transactions with GENVM RESULT: SUCCESS and CONSENSUS RESULT: Accepted — proof validators re-fetched the code and the license on chain.
 
 ## Contract link
-`https://explorer-studio.genlayer.com/address/<TO_BE_FILLED_AFTER_DEPLOY>`
+`https://explorer-studio.genlayer.com/address/0xA47edd22962bc74eE2f611f4318F175Ca0dBf94A`
 
 - **Address:** TO BE FILLED after Peter deploys on Studio.
 - **Network:** studionet (GenLayer Studio hosted)
