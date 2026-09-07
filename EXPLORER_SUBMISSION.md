@@ -90,7 +90,7 @@ Rulings Index shows three RESOLVED cases with distinct verdicts: one INFRINGEMEN
 - **Verify before submit:** open the Explorer link in a real browser and confirm at least one `adjudicate` transaction with `Result: SUCCESS` and `Consensus: Accepted`.
 
 ## Website
-TO BE FILLED after Vercel deploy (`https://license-hawk.vercel.app` is the intended alias).
+https://license-hawk.vercel.app
 
 ## GitHub
 `https://github.com/phu1271997/LicenseHawk`
