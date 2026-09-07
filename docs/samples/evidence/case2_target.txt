@@ -1,0 +1,29 @@
+# bearing_math.py - internal utility, Bearing Systems Ltd.
+# Copyright (c) 2019 Bearing Systems Ltd.
+# All rights reserved.
+#
+# This file predates the microstats v3.0.0 release by roughly six years.
+# See Git blame: initial import 2019-03-14 (commit 4a1b2c3), no changes
+# to the mean/variance/stddev functions since 2020-06.
+
+import math
+
+
+def average(values):
+    total = 0.0
+    for v in values:
+        total += v
+    return total / len(values)
+
+
+def sample_variance(values):
+    m = average(values)
+    total = 0.0
+    for v in values:
+        diff = v - m
+        total += diff * diff
+    return total / (len(values) - 1)
+
+
+def sample_stddev(values):
+    return math.sqrt(sample_variance(values))

@@ -1,0 +1,800 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>LicenseHawk — Open-Source License Enforcement Tribunal</title>
+<link rel="icon" type="image/svg+xml" href="/logo.svg" />
+<link rel="apple-touch-icon" href="/logo-512.png" />
+<meta name="description" content="On-chain AI tribunal for open-source license violation claims. Validators re-fetch both codebases, re-read the license, and rule with a remedy on GenLayer." />
+<meta property="og:title" content="LicenseHawk — License Enforcement on GenLayer" />
+<meta property="og:description" content="On-chain AI tribunal for open-source license violation claims. GenLayer Studio Network." />
+<meta property="og:image" content="/logo-1024.png" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    /* Palette: courtroom + typeset legal brief.
+       Deep oxblood accent, high-contrast ink on cream. */
+    --ink:#141414;
+    --cream:#f7f4ec;
+    --cream-2:#efe9d7;
+    --oxblood:#7a2020;
+    --oxblood-2:#4a0f0f;
+    --sage:#2f6b3d;
+    --amber:#8a6a1e;
+    --rule:#c8bfa6;
+    --muted:#655e4c;
+    --paper:#fdfaf1;
+
+    /* Verdict semantics */
+    --v-infringement:#7a2020;
+    --v-unclear:#8a6a1e;
+    --v-clear:#2f6b3d;
+    --v-retaliatory:#3a1a5c;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{
+    background:var(--cream);
+    color:var(--ink);
+    font-family:'IBM Plex Serif',Georgia,serif;
+    font-size:15px;
+    line-height:1.6;
+    min-height:100vh;
+    /* Faint horizontal rules mimicking a legal ledger sheet */
+    background-image:
+      repeating-linear-gradient(180deg,transparent 0 27px,rgba(20,20,20,0.035) 27px 28px);
+  }
+  a{color:var(--oxblood);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+  a:hover{color:var(--oxblood-2)}
+  .mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace}
+  .sans{font-family:'IBM Plex Sans',system-ui,sans-serif}
+
+  .wrap{max-width:1060px;margin:0 auto;padding:0 22px 100px}
+
+  /* ── Header (masthead of a brief) ────────────────────────────────────── */
+  header{
+    padding:36px 0 22px;
+    border-bottom:2px solid var(--ink);
+    display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;
+  }
+  .brand{display:flex;align-items:center;gap:20px}
+  .brand img{width:72px;height:72px;flex-shrink:0}
+  .brand .lines{display:flex;flex-direction:column;gap:2px}
+  .brand .docket{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--oxblood);font-weight:500;
+  }
+  h1{
+    font-family:'IBM Plex Serif',serif;font-weight:600;font-size:42px;
+    line-height:1;letter-spacing:-0.01em;
+  }
+  .subtitle{
+    font-size:13.5px;color:var(--muted);margin-top:6px;max-width:430px;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+  .wallet{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}
+  .wallet .addr{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
+  .wallet .fund-hint{font-size:11px;color:var(--muted)}
+  button.connect{
+    background:var(--ink);color:var(--paper);border:none;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;padding:11px 18px;cursor:pointer;
+    transition:background .15s ease;
+  }
+  button.connect:hover{background:var(--oxblood-2)}
+
+  /* ── Preamble strip (the mission statement of the court) ─────────────── */
+  .preamble{
+    margin:26px 0 4px;
+    padding:24px 26px;
+    background:var(--paper);
+    border:1px solid var(--rule);
+    position:relative;
+  }
+  .preamble::before{
+    content:"§";position:absolute;top:12px;left:-2px;
+    font-family:'IBM Plex Serif',serif;font-size:34px;color:var(--oxblood);
+    background:var(--cream);padding:0 8px;line-height:1;
+  }
+  .preamble h2{
+    font-family:'IBM Plex Serif',serif;font-weight:600;font-size:22px;
+    letter-spacing:-.005em;margin-bottom:6px;
+  }
+  .preamble p{color:var(--muted);font-size:14px;max-width:820px}
+  .preamble .verdicts{
+    display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:16px;
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+  }
+  .preamble .verdicts span{
+    padding:5px 10px;border:1px solid currentColor;
+  }
+  .preamble .verdicts .infringement{color:var(--v-infringement)}
+  .preamble .verdicts .unclear{color:var(--v-unclear)}
+  .preamble .verdicts .clear{color:var(--v-clear)}
+  .preamble .verdicts .retaliatory{color:var(--v-retaliatory)}
+
+  /* ── Tab bar ─────────────────────────────────────────────────────────── */
+  nav.tabs{
+    display:flex;margin:34px 0 0;border-bottom:1px solid var(--rule);
+    font-family:'IBM Plex Mono',monospace;
+  }
+  nav.tabs button{
+    background:none;border:none;cursor:pointer;
+    font-family:inherit;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
+    padding:14px 22px;color:var(--muted);border-bottom:2px solid transparent;
+    margin-bottom:-1px;transition:color .15s;
+  }
+  nav.tabs button:hover{color:var(--ink)}
+  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--oxblood)}
+
+  .panel{display:none;padding:28px 0}
+  .panel.active{display:block}
+
+  /* ── Forms / cards ───────────────────────────────────────────────────── */
+  .filing{
+    background:var(--paper);
+    border:1px solid var(--rule);
+    padding:26px 28px;margin-bottom:20px;
+    position:relative;
+  }
+  .filing h3{
+    font-family:'IBM Plex Serif',serif;font-weight:600;font-size:19px;
+    padding-bottom:10px;border-bottom:1px solid var(--rule);margin-bottom:14px;
+  }
+  .filing .instr{color:var(--muted);font-size:13.5px;margin-bottom:20px;font-family:'IBM Plex Sans',sans-serif}
+  label{
+    display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;
+    letter-spacing:.14em;text-transform:uppercase;font-weight:600;
+    color:var(--ink);margin:16px 0 5px;
+  }
+  label .hint{
+    font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none;
+    font-size:11.5px;margin-left:6px;
+  }
+  input,textarea,select{
+    width:100%;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);
+    background:var(--cream);border:1px solid var(--rule);padding:10px 12px;
+    transition:border-color .15s,background .15s;
+  }
+  input:focus,textarea:focus,select:focus{
+    outline:none;border-color:var(--oxblood);background:var(--paper);
+  }
+  textarea{min-height:70px;resize:vertical;font-size:13px}
+  .row{display:flex;gap:14px;flex-wrap:wrap}
+  .row > div{flex:1;min-width:220px}
+
+  button.act{
+    margin-top:22px;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;background:var(--oxblood);color:var(--paper);
+    border:none;padding:13px 24px;cursor:pointer;transition:background .15s;
+  }
+  button.act:hover{background:var(--oxblood-2)}
+  button.act:disabled{background:var(--rule);color:var(--muted);cursor:not-allowed}
+  button.ghost{
+    background:transparent;color:var(--ink);border:1px solid var(--ink);
+  }
+  button.ghost:hover{background:var(--ink);color:var(--paper)}
+
+  /* ── Status banner ───────────────────────────────────────────────────── */
+  .status{
+    font-family:'IBM Plex Mono',monospace;font-size:12px;padding:12px 16px;
+    margin-top:18px;display:none;align-items:center;gap:12px;border-left:3px solid;
+  }
+  .status.show{display:flex}
+  .status.work{background:#f0ecdc;border-color:var(--amber);color:var(--amber)}
+  .status.ok{background:#e6ede4;border-color:var(--sage);color:var(--sage)}
+  .status.err{background:#f0dbdb;border-color:var(--oxblood);color:var(--oxblood)}
+  .spin{
+    width:12px;height:12px;border:2px solid var(--amber);
+    border-top-color:transparent;border-radius:50%;
+    animation:s .8s linear infinite;flex-shrink:0;
+  }
+  @keyframes s{to{transform:rotate(360deg)}}
+
+  /* ── Opinion card (Rulings tab) ──────────────────────────────────────── */
+  .opinion{
+    background:var(--paper);border:1px solid var(--ink);margin-bottom:22px;
+  }
+  .opinion .head{
+    display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;
+    padding:16px 22px;border-bottom:1px solid var(--ink);background:var(--ink);color:var(--paper);
+  }
+  .opinion .head .case-id{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-2);
+  }
+  .opinion .head .lic{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;
+    padding:3px 10px;border:1px solid var(--cream-2);color:var(--cream-2);
+  }
+  .opinion .head .verdict-tag{
+    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
+    padding:5px 12px;background:var(--paper);
+  }
+  .verdict-INFRINGEMENT_CONFIRMED{color:var(--v-infringement);border:1px solid var(--v-infringement)}
+  .verdict-DERIVATIVE_UNCLEAR{color:var(--v-unclear);border:1px solid var(--v-unclear)}
+  .verdict-NO_INFRINGEMENT{color:var(--v-clear);border:1px solid var(--v-clear)}
+  .verdict-RETALIATORY_CLAIM{color:var(--v-retaliatory);border:1px solid var(--v-retaliatory)}
+
+  .opinion .body{padding:22px 24px}
+  .opinion h4{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;
+    text-transform:uppercase;color:var(--muted);margin:16px 0 6px;font-weight:500;
+  }
+  .opinion h4:first-child{margin-top:0}
+  .opinion .analysis{
+    font-size:15px;line-height:1.65;
+    border-left:2px solid var(--oxblood);padding:2px 0 2px 18px;color:var(--ink);
+  }
+  .opinion .facts{
+    display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;
+    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
+    padding:12px 0;border-top:1px dashed var(--rule);border-bottom:1px dashed var(--rule);
+    margin-top:12px;
+  }
+  .opinion .facts strong{color:var(--ink);font-weight:600}
+  .opinion .parties{
+    display:flex;gap:22px;flex-wrap:wrap;margin-top:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);
+  }
+  .opinion .parties .p{display:flex;flex-direction:column;gap:1px}
+  .opinion .parties .p .role{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--oxblood)}
+  .opinion .evidence-list{
+    font-family:'IBM Plex Mono',monospace;font-size:12.5px;
+    display:flex;flex-direction:column;gap:4px;padding:6px 0;
+  }
+  .opinion .evidence-list a{word-break:break-all}
+  .opinion .foot{
+    padding:14px 24px;background:var(--cream-2);border-top:1px solid var(--rule);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
+  }
+  .opinion .signals{
+    display:flex;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
+    margin-top:12px;flex-wrap:wrap;
+  }
+  .opinion .signals span strong{color:var(--ink)}
+
+  .empty{
+    text-align:center;padding:50px 20px;color:var(--muted);
+    font-style:italic;font-size:15px;
+  }
+  .empty small{display:block;margin-top:8px;font-size:12.5px;font-style:normal}
+
+  /* ── Rulings index (list of cards) ───────────────────────────────────── */
+  .idx-row{
+    padding:16px 20px;background:var(--paper);border:1px solid var(--rule);
+    margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+  }
+  .idx-row:hover{border-color:var(--oxblood);background:var(--cream-2)}
+  .idx-row .case-num{font-family:'IBM Plex Mono',monospace;font-weight:600}
+  .idx-row .badge{
+    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
+    text-transform:uppercase;padding:4px 10px;
+  }
+  .idx-row .snippet{
+    font-size:13px;color:var(--muted);flex:1;min-width:200px;
+    font-family:'IBM Plex Sans',sans-serif;
+  }
+
+  /* ── Footer ──────────────────────────────────────────────────────────── */
+  footer{
+    margin-top:70px;padding:20px 0;
+    border-top:2px solid var(--ink);
+    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+  }
+  footer .cite{letter-spacing:.06em}
+
+  @media(max-width:640px){
+    h1{font-size:32px}
+    nav.tabs{overflow-x:auto}
+    nav.tabs button{padding:12px 14px;font-size:10.5px;flex-shrink:0}
+    .opinion .facts{grid-template-columns:1fr}
+    .brand img{width:56px;height:56px}
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<header>
+  <div class="brand">
+    <img src="/logo.svg" alt="LicenseHawk seal" />
+    <div class="lines">
+      <span class="docket">Docket · Open-Source License Enforcement</span>
+      <h1>LicenseHawk</h1>
+      <p class="subtitle">On-chain tribunal for GPL, MIT, BSD, Apache, and AGPL license claims — evidence is read directly from the web by validators, verdicts are ratified by consensus of meaning.</p>
+    </div>
+  </div>
+  <div class="wallet">
+    <button class="connect" id="connectBtn">Connect Wallet</button>
+    <span class="addr" id="addrLabel"></span>
+    <a class="fund-hint" href="https://studio.genlayer.com" target="_blank" rel="noopener">Fund address from Studio Accounts →</a>
+  </div>
+</header>
+
+<section class="preamble">
+  <h2>Copyleft without a court — until now.</h2>
+  <p>File a claim naming the upstream repository and the alleged downstream infringer. Post a bond. The respondent posts a matching bond and their defense URLs. On <em>adjudicate</em>, GenLayer validators fetch both codebases, re-read the license text, and independently rule; consensus is reached on the <em>meaning</em> of the verdict, not its wording. Bonds are then distributed per the ruling.</p>
+  <div class="verdicts">
+    <span class="infringement">Infringement Confirmed</span>
+    <span class="unclear">Derivative Unclear</span>
+    <span class="clear">No Infringement</span>
+    <span class="retaliatory">Retaliatory Claim</span>
+  </div>
+</section>
+
+<nav class="tabs">
+  <button class="active" data-tab="file">I · File Case</button>
+  <button data-tab="respond">II · Respond</button>
+  <button data-tab="adjudicate">III · Adjudicate &amp; Enforce</button>
+  <button data-tab="rulings">Rulings Index</button>
+</nav>
+
+<!-- ═══ TAB I ═════════════════════════════════════════════════════════════ -->
+<div class="panel active" id="tab-file">
+  <div class="filing">
+    <h3>Petition to File a License Enforcement Case</h3>
+    <p class="instr">As the rightsholder, you submit your own source repository URL, name the allegedly infringing downstream URL, and post a bond. The bond is locked until enforcement.</p>
+
+    <label>Respondent Wallet Address <span class="hint">the party you accuse</span></label>
+    <input id="f_respondent" placeholder="0x..." />
+
+    <div class="row">
+      <div>
+        <label>License Type <span class="hint">SPDX identifier</span></label>
+        <select id="f_license">
+          <option value="GPL-3.0">GPL-3.0</option>
+          <option value="GPL-2.0">GPL-2.0</option>
+          <option value="AGPL-3.0">AGPL-3.0</option>
+          <option value="LGPL-3.0">LGPL-3.0</option>
+          <option value="LGPL-2.1">LGPL-2.1</option>
+          <option value="MIT">MIT</option>
+          <option value="BSD-2-Clause">BSD-2-Clause</option>
+          <option value="BSD-3-Clause">BSD-3-Clause</option>
+          <option value="Apache-2.0">Apache-2.0</option>
+          <option value="MPL-2.0">MPL-2.0</option>
+          <option value="OTHER">OTHER</option>
+        </select>
+      </div>
+      <div>
+        <label>Claimant Bond <span class="hint">native units, sent with tx</span></label>
+        <input id="f_bond" type="number" min="1" placeholder="1000000" />
+      </div>
+    </div>
+
+    <label>Claimant Source URL <span class="hint">raw file or archive; e.g. raw.githubusercontent.com/...</span></label>
+    <input id="f_source" placeholder="https://raw.githubusercontent.com/you/project/main/src/lib.py" />
+
+    <label>Target URL <span class="hint">the allegedly infringing product's source</span></label>
+    <input id="f_target" placeholder="https://raw.githubusercontent.com/them/product/main/vendor/lib.py" />
+
+    <label>Claim Notes <span class="hint">theory of the case, cite the clause</span></label>
+    <textarea id="f_notes" placeholder="Target ships our GPL-3.0 parser inside a proprietary binary without publishing corresponding source; §5 obligation unmet."></textarea>
+
+    <button class="act" id="f_btn">Post Bond &amp; File Case</button>
+    <div class="status" id="f_status"></div>
+  </div>
+</div>
+
+<!-- ═══ TAB II ════════════════════════════════════════════════════════════ -->
+<div class="panel" id="tab-respond">
+  <div class="filing">
+    <h3>Answer &amp; Defense</h3>
+    <p class="instr">Only the named respondent may answer. Post a matching bond and upload defense URLs — your own source, prior-art URLs predating the claim, or a written license grant. The AI Jury will fetch each one.</p>
+
+    <div class="row">
+      <div><label>Case ID</label><input id="r_id" placeholder="0" /></div>
+      <div>
+        <label>Respondent Bond <span class="hint">native units, sent with tx</span></label>
+        <input id="r_bond" type="number" min="1" placeholder="1000000" />
+      </div>
+    </div>
+
+    <label>Defense URLs <span class="hint">JSON array of {"url": "...", "note": "..."} — at least one</span></label>
+    <textarea id="r_urls" placeholder='[{"url":"https://raw.githubusercontent.com/us/product/main/NOTICE","note":"our attribution file"},{"url":"https://raw.githubusercontent.com/us/product/main/vendor/lib.py","note":"predates their release"}]'></textarea>
+
+    <label>Defense Notes <span class="hint">explain each URL; cite counter-evidence</span></label>
+    <textarea id="r_notes" placeholder="Our NOTICE file (URL 1) already ships the required MIT attribution. URL 2 shows our repo history predates the claimant's release."></textarea>
+
+    <button class="act" id="r_btn">Post Bond &amp; Respond</button>
+    <div class="status" id="r_status"></div>
+  </div>
+</div>
+
+<!-- ═══ TAB III ═══════════════════════════════════════════════════════════ -->
+<div class="panel" id="tab-adjudicate">
+  <div class="filing">
+    <h3>Convene the AI Tribunal</h3>
+    <p class="instr">Once both bonds are posted, either party may request adjudication. Validators fetch both codebases and the defense evidence, re-read the license text, and rule. Expect one to two minutes for consensus.</p>
+    <div class="row">
+      <div><label>Case ID</label><input id="a_id" placeholder="0" /></div>
+    </div>
+    <button class="act" id="a_btn">Request Adjudication</button>
+    <div class="status" id="a_status"></div>
+  </div>
+
+  <div class="filing">
+    <h3>Enforce Verdict &amp; Distribute Bonds</h3>
+    <p class="instr">After adjudication, either party may call <span class="mono">enforce</span>. Bonds are distributed by the ruling: an infringing respondent forfeits its bond to the claimant; a cleared respondent recovers its bond and takes the claimant's as defense cost; an unclear case returns each bond to its poster; a retaliatory claim forfeits the claimant's entire bond.</p>
+    <div class="row">
+      <div><label>Case ID</label><input id="e_id" placeholder="0" /></div>
+    </div>
+    <button class="act" id="e_btn">Enforce Ruling</button>
+    <div class="status" id="e_status"></div>
+  </div>
+</div>
+
+<!-- ═══ TAB IV — Rulings (public read) ═══════════════════════════════════ -->
+<div class="panel" id="tab-rulings">
+  <div class="filing">
+    <h3>Rulings Index</h3>
+    <p class="instr">Every filed case, newest first. No wallet required — this tab is a public reading room. Click a row to open the full opinion.</p>
+    <button class="act ghost" id="idx_btn">Refresh Index</button>
+    <div class="status" id="idx_status"></div>
+    <div id="idx_list" style="margin-top:16px"></div>
+  </div>
+  <div id="opinion_out"></div>
+</div>
+
+<footer>
+  <span class="cite">LicenseHawk · Intelligent Contract on GenLayer studionet</span>
+  <span class="mono" id="contractLabel">contract: —</span>
+</footer>
+
+</div>
+
+<script type="module">
+import { createClient, createAccount } from "genlayer-js";
+import { localnet, studionet } from "genlayer-js/chains";
+import { CONTRACT_ADDRESS, CHAIN } from "./src/config.js";
+
+const chain = CHAIN === "studio" ? studionet : localnet;
+const CHAIN_ID_HEX = "0x" + chain.id.toString(16);
+const RPC_URL = chain.rpcUrls?.default?.http?.[0] || "https://studio.genlayer.com/api";
+
+let account = null;
+let client  = null;
+const readOnlyClient = createClient({ chain });
+
+const $ = (id) => document.getElementById(id);
+$("contractLabel").textContent = "contract: " + (CONTRACT_ADDRESS || "not configured");
+
+// ── Status helpers ─────────────────────────────────────────────────────────
+function setStatus(el, kind, msg, spin=false){
+  el.className = "status show " + kind;
+  el.innerHTML = (spin ? '<span class="spin"></span>' : '') + '<span>' + msg + '</span>';
+}
+function clearStatus(el){ el.className = "status"; }
+
+// ── Network switch ─────────────────────────────────────────────────────────
+async function ensureNetwork(){
+  if (!window.ethereum) return;
+  try {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [{ chainId: CHAIN_ID_HEX }],
+    });
+  } catch (err) {
+    if (err.code === 4902 || err.code === -32603) {
+      await window.ethereum.request({
+        method: "wallet_addEthereumChain",
+        params: [{
+          chainId: CHAIN_ID_HEX,
+          chainName: "GenLayer Studio Network",
+          nativeCurrency: { name: "GEN Token", symbol: "GEN", decimals: 18 },
+          rpcUrls: [RPC_URL],
+          blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
+        }],
+      });
+    } else { throw err; }
+  }
+}
+
+// ── Wallet connect ─────────────────────────────────────────────────────────
+$("connectBtn").addEventListener("click", async () => {
+  try {
+    if (!window.ethereum) {
+      $("addrLabel").textContent = "MetaMask required — install and reload";
+      return;
+    }
+    await ensureNetwork();
+    const [addr] = await window.ethereum.request({ method: "eth_requestAccounts" });
+    account = createAccount(addr);
+    client  = createClient({ chain, account });
+    const a = account.address;
+    $("addrLabel").textContent = a.slice(0,6) + "…" + a.slice(-4);
+    $("connectBtn").textContent = "Connected";
+  } catch (e) {
+    $("addrLabel").textContent = "Wallet connection error";
+    console.error(e);
+  }
+});
+
+function ensureReady(statusEl){
+  if (!client || !account){ setStatus(statusEl, "err", "Please connect your wallet first."); return false; }
+  if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "TO_BE_FILLED_AFTER_DEPLOY"){
+    setStatus(statusEl, "err", "Contract address is not configured in src/config.js.");
+    return false;
+  }
+  return true;
+}
+
+// ── Contract IO ────────────────────────────────────────────────────────────
+async function writeTx(fn, args, value, statusEl){
+  setStatus(statusEl, "work", "Signing & waiting for network consensus…", true);
+  const hash = await client.writeContract({
+    address: CONTRACT_ADDRESS, functionName: fn, args,
+    value: value ? BigInt(value) : 0n,
+  });
+  await client.waitForTransactionReceipt({ hash, status: "FINALIZED" });
+  return hash;
+}
+async function readContract(fn, args){
+  return client.readContract({ address: CONTRACT_ADDRESS, functionName: fn, args });
+}
+async function readPublic(fn, args){
+  return readOnlyClient.readContract({ address: CONTRACT_ADDRESS, functionName: fn, args });
+}
+
+// ── Tab switching ──────────────────────────────────────────────────────────
+document.querySelectorAll("nav.tabs button").forEach(b => {
+  b.addEventListener("click", () => {
+    document.querySelectorAll("nav.tabs button").forEach(x => x.classList.remove("active"));
+    document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
+    b.classList.add("active");
+    $("tab-" + b.dataset.tab).classList.add("active");
+  });
+});
+
+// ── TAB I — File case ──────────────────────────────────────────────────────
+$("f_btn").addEventListener("click", async () => {
+  const el = $("f_status");
+  if (!ensureReady(el)) return;
+  try {
+    const respondent = $("f_respondent").value.trim();
+    const source = $("f_source").value.trim();
+    const target = $("f_target").value.trim();
+    const license = $("f_license").value;
+    const notes = $("f_notes").value.trim();
+    const bond = $("f_bond").value.trim();
+    if (!respondent || !source || !target || !bond){
+      setStatus(el, "err", "Respondent address, source URL, target URL, and bond are required.");
+      return;
+    }
+    await writeTx("file_case", [respondent, source, target, license, notes], bond, el);
+    const total = Number(await readContract("get_total_cases", []));
+    setStatus(el, "ok", "Bond posted. Case #" + (total - 1) + " filed. Share the case id with the respondent.");
+  } catch (e){
+    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    console.error(e);
+  }
+});
+
+// ── TAB II — Respond ───────────────────────────────────────────────────────
+$("r_btn").addEventListener("click", async () => {
+  const el = $("r_status");
+  if (!ensureReady(el)) return;
+  try {
+    const id = $("r_id").value.trim();
+    const urls = $("r_urls").value.trim();
+    const notes = $("r_notes").value.trim();
+    const bond = $("r_bond").value.trim();
+    if (!id || !urls || !bond){
+      setStatus(el, "err", "Case ID, defense URLs, and bond are required.");
+      return;
+    }
+    try { JSON.parse(urls); }
+    catch { setStatus(el, "err", "Defense URLs must be valid JSON array."); return; }
+    await writeTx("respond_case", [id, urls, notes], bond, el);
+    setStatus(el, "ok", "Answer filed for case #" + id + ". Case is now CONTESTED; either party may request adjudication.");
+  } catch (e){
+    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    console.error(e);
+  }
+});
+
+// ── TAB III — Adjudicate ───────────────────────────────────────────────────
+$("a_btn").addEventListener("click", async () => {
+  const el = $("a_status");
+  if (!ensureReady(el)) return;
+  try {
+    const id = $("a_id").value.trim();
+    if (!id){ setStatus(el, "err", "Case ID is required."); return; }
+    setStatus(el, "work", "AI tribunal fetching both codebases and re-reading the license… (1–2 minutes)", true);
+    const hash = await client.writeContract({
+      address: CONTRACT_ADDRESS, functionName: "adjudicate", args: [id], value: 0n,
+    });
+    await client.waitForTransactionReceipt({ hash, status: "FINALIZED" });
+    setStatus(el, "ok", "Ruling entered for case #" + id + ". Open the Rulings Index to read the opinion.");
+    $("e_id").value = id;
+  } catch (e){
+    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    console.error(e);
+  }
+});
+
+// ── TAB III — Enforce ──────────────────────────────────────────────────────
+$("e_btn").addEventListener("click", async () => {
+  const el = $("e_status");
+  if (!ensureReady(el)) return;
+  try {
+    const id = $("e_id").value.trim();
+    if (!id){ setStatus(el, "err", "Case ID is required."); return; }
+    await writeTx("enforce", [id], 0, el);
+    setStatus(el, "ok", "Bonds distributed for case #" + id + ".");
+  } catch (e){
+    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    console.error(e);
+  }
+});
+
+// ── TAB IV — Rulings Index ─────────────────────────────────────────────────
+const STATUS_LABEL = {
+  CASE_FILED: "Filed — awaiting answer",
+  CASE_CONTESTED: "Contested — awaiting tribunal",
+  CASE_ADJUDICATED: "Ruled — awaiting enforcement",
+  CASE_ENFORCED: "Enforced — closed",
+};
+const VERDICT_LABEL = {
+  INFRINGEMENT_CONFIRMED: "Infringement Confirmed",
+  DERIVATIVE_UNCLEAR: "Derivative Unclear",
+  NO_INFRINGEMENT: "No Infringement",
+  RETALIATORY_CLAIM: "Retaliatory Claim",
+};
+
+async function loadRulings(){
+  const el = $("idx_status"), list = $("idx_list");
+  if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "TO_BE_FILLED_AFTER_DEPLOY"){
+    setStatus(el, "err", "Contract address is not configured.");
+    return;
+  }
+  try {
+    setStatus(el, "work", "Reading case ledger from the chain…", true);
+    const total = Number(await readPublic("get_total_cases", []));
+    if (total === 0){
+      clearStatus(el);
+      list.innerHTML = '<p class="empty">The docket is empty.<small>File the first case on tab I.</small></p>';
+      return;
+    }
+    const ids = [];
+    for (let i = total - 1; i >= Math.max(0, total - 12); i--) ids.push(i);
+    const rows = await Promise.all(ids.map(async i => {
+      try {
+        const raw = await readPublic("get_case", [String(i)]);
+        const d = typeof raw === "string" ? JSON.parse(raw) : raw;
+        return { id: i, d };
+      } catch (e){ return { id: i, err: e.shortMessage || e.message || String(e) }; }
+    }));
+    clearStatus(el);
+    list.innerHTML = rows.map(r => {
+      if (r.err) return `<div class="idx-row"><span class="case-num">#${r.id}</span><span class="snippet">error: ${escapeHtml(r.err).slice(0,120)}</span></div>`;
+      const d = r.d;
+      const isRuled = d.status === "CASE_ADJUDICATED" || d.status === "CASE_ENFORCED";
+      const tag = isRuled
+        ? `<span class="badge verdict-${d.verdict}">${VERDICT_LABEL[d.verdict] || d.verdict}</span>`
+        : `<span class="badge" style="border:1px solid var(--muted);color:var(--muted)">${STATUS_LABEL[d.status] || d.status}</span>`;
+      const snip = isRuled && d.reason
+        ? `<span class="snippet">${escapeHtml(d.reason.slice(0, 130))}${d.reason.length > 130 ? "…" : ""}</span>`
+        : `<span class="snippet">${d.license_type} · ${shortUrl(d.target_url)}</span>`;
+      return `<div class="idx-row" data-open="${r.id}"><span class="case-num">Case No. ${r.id}</span>${snip}${tag}</div>`;
+    }).join("");
+  } catch (e){
+    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    console.error(e);
+  }
+}
+
+$("idx_btn").addEventListener("click", loadRulings);
+document.querySelector('nav.tabs button[data-tab="rulings"]').addEventListener("click", () => {
+  if (!$("idx_list").hasChildNodes()) loadRulings();
+});
+document.addEventListener("click", async (ev) => {
+  const row = ev.target.closest("[data-open]");
+  if (!row) return;
+  const id = row.dataset.open;
+  try {
+    const raw = await readPublic("get_case", [String(id)]);
+    const d = typeof raw === "string" ? JSON.parse(raw) : raw;
+    $("opinion_out").innerHTML = renderOpinion(id, d);
+    $("opinion_out").scrollIntoView({ behavior: "smooth", block: "start" });
+  } catch (e){
+    $("opinion_out").innerHTML = `<div class="empty">Could not load case #${id}: ${escapeHtml(e.message || String(e))}</div>`;
+  }
+});
+
+function renderOpinion(id, d){
+  const isRuled = d.status === "CASE_ADJUDICATED" || d.status === "CASE_ENFORCED";
+  const enforced = d.status === "CASE_ENFORCED";
+
+  const verdictHead = isRuled
+    ? `<span class="verdict-tag verdict-${d.verdict}">${VERDICT_LABEL[d.verdict] || d.verdict}</span>`
+    : `<span class="verdict-tag" style="color:var(--muted);border:1px solid var(--muted)">${STATUS_LABEL[d.status] || d.status}</span>`;
+
+  const defenseLinks = (d.defense_urls || []).map(u =>
+    `<a href="${u.url}" target="_blank" rel="noopener">${shortUrl(u.url)}</a>${u.note ? ` — <span style="color:var(--muted)">${escapeHtml(u.note)}</span>` : ""}`
+  ).join("");
+
+  const total = (d.claimant_bond || 0) + (d.respondent_bond || 0);
+  const payoutBlock = enforced
+    ? `<h4>Enforcement Distribution</h4>
+       <div class="facts">
+         <div>Claimant received <strong>${d.payout_claimant}</strong> of ${total} pool</div>
+         <div>Respondent received <strong>${d.payout_respondent}</strong> of ${total} pool</div>
+       </div>`
+    : "";
+
+  const analysisBlock = isRuled
+    ? `<h4>License Analysis</h4>
+       <div class="analysis">${escapeHtml(d.license_analysis || "—")}</div>
+       <h4>Reasoning</h4>
+       <div class="analysis">${escapeHtml(d.reason || "—")}</div>
+       <div class="signals">
+         <span>Similarity: <strong>${d.similarity_signal || "—"}</strong></span>
+         <span>Attribution: <strong>${d.attribution_status || "—"}</strong></span>
+         <span>Remedy: <strong>${d.remedy || "NONE"}</strong></span>
+       </div>`
+    : `<h4>Status</h4>
+       <div class="analysis">${STATUS_LABEL[d.status] || d.status}. Awaiting the next procedural step before a ruling can be entered.</div>`;
+
+  return `
+  <article class="opinion">
+    <header class="head">
+      <span class="case-id">Case No. ${id}</span>
+      <span class="lic">${d.license_type}</span>
+      ${verdictHead}
+    </header>
+    <div class="body">
+      <div class="parties">
+        <div class="p"><span class="role">Claimant</span><span>${shortAddr(d.claimant)}</span></div>
+        <div class="p"><span class="role">Respondent</span><span>${shortAddr(d.respondent)}</span></div>
+      </div>
+
+      <div class="facts">
+        <div>Claimant bond: <strong>${d.claimant_bond}</strong></div>
+        <div>Respondent bond: <strong>${d.respondent_bond}</strong></div>
+      </div>
+
+      <h4>Source at Issue</h4>
+      <div class="evidence-list">
+        <a href="${d.source_url}" target="_blank" rel="noopener">${shortUrl(d.source_url)}</a>
+        <span style="color:var(--muted)">Alleged infringing target:</span>
+        <a href="${d.target_url}" target="_blank" rel="noopener">${shortUrl(d.target_url)}</a>
+      </div>
+
+      <h4>Claimant's Theory</h4>
+      <div class="analysis">${escapeHtml(d.claim_notes || "—")}</div>
+
+      <h4>Respondent's Defense</h4>
+      <div class="analysis">${escapeHtml(d.defense_notes || "—")}</div>
+      ${defenseLinks ? `<div class="evidence-list">${defenseLinks}</div>` : ""}
+
+      ${analysisBlock}
+      ${payoutBlock}
+    </div>
+    <footer class="foot">
+      <span>Governing license: ${d.license_type}</span>
+      <span>Status: ${STATUS_LABEL[d.status] || d.status}</span>
+    </footer>
+  </article>`;
+}
+
+function shortUrl(u){
+  try { const x = new URL(u); return x.hostname + (x.pathname.length > 32 ? x.pathname.slice(0,32) + "…" : x.pathname); }
+  catch { return String(u).slice(0, 40); }
+}
+function shortAddr(a){
+  if (!a) return "—";
+  return a.slice(0,6) + "…" + a.slice(-4);
+}
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
+}
+</script>
+</body>
+</html>

@@ -1,0 +1,29 @@
+# WrenTools v1.0 - shipping module
+# Copyright (c) 2026 Wren Analytics
+# Includes third-party components; see NOTICE.
+
+# The NOTICE file distributed with WrenTools contains:
+#
+#   kingfisher-color (MIT)
+#   Copyright (c) 2025 Kingfisher Studio Ltd.
+#   Permission is hereby granted, free of charge, to any person obtaining a
+#   copy of this software and associated documentation files [...]
+
+_PALETTE = {
+    "azure": (54, 137, 220),
+    "vermillion": (227, 66, 52),
+    "goldenrod": (218, 165, 32),
+}
+
+
+def blend(name_a, name_b, t):
+    a = _PALETTE[name_a]
+    b = _PALETTE[name_b]
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+def relative_luminance(rgb):
+    r, g, b = [c / 255.0 for c in rgb]
+    def _lin(c):
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * _lin(r) + 0.7152 * _lin(g) + 0.0722 * _lin(b)

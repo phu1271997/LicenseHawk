@@ -1,0 +1,27 @@
+# kingfisher-color v0.2.1 - SOURCE (upstream)
+# SPDX-License-Identifier: MIT
+# Copyright (c) 2025 Kingfisher Studio Ltd.
+
+# The MIT license requires that the copyright notice and permission notice
+# be included in all copies or substantial portions of the Software.
+
+_PALETTE = {
+    "azure": (54, 137, 220),
+    "vermillion": (227, 66, 52),
+    "goldenrod": (218, 165, 32),
+}
+
+
+def blend(name_a: str, name_b: str, t: float) -> tuple:
+    """Linearly blend two named palette colors. t in [0, 1]."""
+    a = _PALETTE[name_a]
+    b = _PALETTE[name_b]
+    return tuple(int(a[i] + (b[i] - a[i]) * t) for i in range(3))
+
+
+def relative_luminance(rgb: tuple) -> float:
+    """WCAG 2.x relative luminance formula."""
+    r, g, b = [c / 255.0 for c in rgb]
+    def _lin(c: float) -> float:
+        return c / 12.92 if c <= 0.03928 else ((c + 0.055) / 1.055) ** 2.4
+    return 0.2126 * _lin(r) + 0.7152 * _lin(g) + 0.0722 * _lin(b)

@@ -1,0 +1,42 @@
+# Acme Cloud Inc - proprietary parser module
+# Copyright (c) 2026 Acme Cloud Inc. All rights reserved.
+# License: closed-source, distributed as part of Acme Cloud Runtime v3.2.
+# No NOTICE file, no LICENSE file, no source disclosure.
+
+def _tokenize(src):
+    out, buf, in_str = [], [], False
+    for ch in src:
+        if ch == '"':
+            in_str = not in_str
+            buf.append(ch)
+            continue
+        if not in_str and ch.isspace():
+            if buf:
+                out.append("".join(buf))
+                buf = []
+            continue
+        buf.append(ch)
+    if buf:
+        out.append("".join(buf))
+    return out
+
+
+def _reduce(tokens):
+    stack, root = [], {"kind": "root", "children": []}
+    cur = root
+    for t in tokens:
+        if t == "{":
+            node = {"kind": "obj", "children": []}
+            cur["children"].append(node)
+            stack.append(cur)
+            cur = node
+        elif t == "}":
+            cur = stack.pop()
+        else:
+            cur["children"].append({"kind": "leaf", "value": t})
+    return root
+
+
+def parse(src):
+    """Acme Cloud Runtime internal parser."""
+    return _reduce(_tokenize(src))

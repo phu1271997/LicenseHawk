@@ -1,0 +1,10 @@
+Defense filing - Acme Cloud Inc, case 0.
+
+We ship no NOTICE file and no LICENSE file. Our parser module was
+transcribed from libtinyparse and lightly reformatted; we do not claim
+independent authorship. We do not distribute source and consider our
+runtime a trade secret.
+
+We understand libtinyparse is GPL-3.0. We do not believe that obligation
+applies to our internal use, and we ask the tribunal to declare that
+running the code inside a closed SaaS product is not "distribution".

@@ -1,0 +1,9 @@
+Defense filing - Wren Analytics, case 1.
+
+We ship kingfisher-color inside WrenTools under MIT. The MIT license
+text and the Kingfisher Studio Ltd. copyright notice are reproduced in
+our NOTICE file, distributed alongside the binary and viewable in the
+help menu (Help > About > Third-party notices).
+
+We have not modified the licensed code substantively, only stripped
+Python 3.10 type hints for compatibility with our 3.8 runtime.

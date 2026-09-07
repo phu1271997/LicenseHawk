@@ -1,0 +1,25 @@
+# microstats v3.0.0 - SOURCE (upstream)
+# SPDX-License-Identifier: Apache-2.0
+# Copyright (c) 2025 Talon Analytics
+
+# Apache-2.0 requires attribution and a copy of the license, and preservation
+# of NOTICE text. Substantially similar code is treated as a derivative work.
+
+from math import fsum, sqrt
+
+
+def mean(xs: list[float]) -> float:
+    if not xs:
+        raise ValueError("mean() arg is an empty sequence")
+    return fsum(xs) / len(xs)
+
+
+def variance(xs: list[float]) -> float:
+    if len(xs) < 2:
+        raise ValueError("variance() requires at least two samples")
+    m = mean(xs)
+    return fsum((x - m) ** 2 for x in xs) / (len(xs) - 1)
+
+
+def stddev(xs: list[float]) -> float:
+    return sqrt(variance(xs))

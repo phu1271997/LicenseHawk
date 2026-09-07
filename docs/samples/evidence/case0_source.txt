@@ -1,0 +1,45 @@
+# libtinyparse v1.4.0 - SOURCE (upstream)
+# SPDX-License-Identifier: GPL-3.0-or-later
+# Copyright (c) 2024 Hawk Labs Inc.
+
+# The project ships under the GPL-3.0 with the standard corresponding-source
+# obligation: anyone distributing binaries or a covered derivative work must
+# publish the complete source, under GPL-3.0, at no additional charge.
+
+def _tokenize(src: str) -> list[str]:
+    out, buf, in_str = [], [], False
+    for ch in src:
+        if ch == '"':
+            in_str = not in_str
+            buf.append(ch)
+            continue
+        if not in_str and ch.isspace():
+            if buf:
+                out.append("".join(buf))
+                buf = []
+            continue
+        buf.append(ch)
+    if buf:
+        out.append("".join(buf))
+    return out
+
+
+def _reduce(tokens: list[str]) -> dict:
+    stack, root = [], {"kind": "root", "children": []}
+    cur = root
+    for t in tokens:
+        if t == "{":
+            node = {"kind": "obj", "children": []}
+            cur["children"].append(node)
+            stack.append(cur)
+            cur = node
+        elif t == "}":
+            cur = stack.pop()
+        else:
+            cur["children"].append({"kind": "leaf", "value": t})
+    return root
+
+
+def parse(src: str) -> dict:
+    """Public entry point for libtinyparse. GPL-3.0."""
+    return _reduce(_tokenize(src))

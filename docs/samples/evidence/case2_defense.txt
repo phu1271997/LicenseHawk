@@ -1,0 +1,10 @@
+Defense filing - Bearing Systems Ltd., case 2.
+
+The claimant, Talon Analytics, released microstats v3.0.0 in April 2025.
+Our bearing_math.py file has been in this repository since March 2019,
+six years before microstats existed. Git history is public and easily
+verifiable via the commit hashes referenced in the source excerpt.
+
+The implementations of mean and variance are textbook one-liners taught
+in every intro statistics course and are not, on their own, copyrightable
+expression. We ask the tribunal to find the claim retaliatory.
