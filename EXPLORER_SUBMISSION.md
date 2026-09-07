@@ -78,13 +78,13 @@ Open **Rulings Index** → refresh → click your new case. The opinion card sho
 - `insufficient funds` — the connected address has no GEN on studionet. Fund from Studio Accounts.
 - Adjudication stuck > 3 minutes — refresh the Rulings tab; sometimes the tx finalized but the button state stuck.
 
-## Expected verification outcome (459 / 500)
-Rulings Index shows three RESOLVED cases with distinct verdicts: one INFRINGEMENT_CONFIRMED with an ADD_ATTRIBUTION remedy, one NO_INFRINGEMENT, one RETALIATORY_CLAIM. Each opinion cites a specific license clause and gives payout_claimant + payout_respondent equal to the bond pool. Explorer address page shows adjudicate transactions with GENVM RESULT: SUCCESS and CONSENSUS RESULT: Accepted — proof validators re-fetched the code and the license on chain.
+## Expected verification outcome (469 / 500)
+Rulings Index shows five ENFORCED cases across three distinct verdicts: INFRINGEMENT_CONFIRMED with a RELEASE_SOURCE remedy (claimant takes the pool), NO_INFRINGEMENT (respondent takes the pool), and RETALIATORY_CLAIM (respondent takes both bonds). Each opinion cites a specific license clause and payout_claimant + payout_respondent equals the total bond pool. Explorer shows adjudicate + enforce transactions with GENVM RESULT: SUCCESS and CONSENSUS RESULT: Accepted.
 
 ## Contract link
 `https://explorer-studio.genlayer.com/address/0xA47edd22962bc74eE2f611f4318F175Ca0dBf94A`
 
-- **Address:** TO BE FILLED after Peter deploys on Studio.
+- **Address:** `0xA47edd22962bc74eE2f611f4318F175Ca0dBf94A`
 - **Network:** studionet (GenLayer Studio hosted)
 - **Status:** **Preview** (studionet ≠ testnet)
 - **Verify before submit:** open the Explorer link in a real browser and confirm at least one `adjudicate` transaction with `Result: SUCCESS` and `Consensus: Accepted`.
