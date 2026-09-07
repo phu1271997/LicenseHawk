@@ -12,315 +12,775 @@
 <meta property="og:image" content="/logo-1024.png" />
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Serif:ital,wght@0,400;0,500;0,600;0,700;1,400;1,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
+  /* ─── Design tokens ─────────────────────────────────────────────────── */
   :root{
-    /* Palette: courtroom + typeset legal brief.
-       Deep oxblood accent, high-contrast ink on cream. */
-    --ink:#141414;
-    --cream:#f7f4ec;
-    --cream-2:#efe9d7;
-    --oxblood:#7a2020;
-    --oxblood-2:#4a0f0f;
-    --sage:#2f6b3d;
-    --amber:#8a6a1e;
-    --rule:#c8bfa6;
-    --muted:#655e4c;
-    --paper:#fdfaf1;
+    /* Surfaces */
+    --bg:         #f2ede0;
+    --paper:      #fdfaf1;
+    --paper-2:    #f5efdd;
+    --paper-3:    #efe7cf;
 
-    /* Verdict semantics */
-    --v-infringement:#7a2020;
-    --v-unclear:#8a6a1e;
-    --v-clear:#2f6b3d;
-    --v-retaliatory:#3a1a5c;
+    /* Ink */
+    --ink:        #141414;
+    --ink-2:      #3c3830;
+    --muted:      #6b6350;
+    --rule:       #c8bda2;
+    --rule-2:     #a89e83;
+
+    /* Accents */
+    --accent:     #7a2020;   /* oxblood */
+    --accent-2:   #4a0f0f;
+    --brass:      #a67e2b;   /* seal gold */
+    --parchment:  #ded1a3;
+
+    /* Verdict colors */
+    --v-infringement: #7a2020;
+    --v-unclear:      #8a6a1e;
+    --v-clean:        #2f6b3d;
+    --v-retaliatory:  #4a1a6a;
+
+    /* Status colors */
+    --s-filed:      #7f6c34;
+    --s-contested:  #8a4a1e;
+    --s-ruled:      #2b5479;
+    --s-enforced:   #2f6b3d;
+
+    /* Spacing */
+    --s-1: 4px;
+    --s-2: 8px;
+    --s-3: 12px;
+    --s-4: 16px;
+    --s-5: 22px;
+    --s-6: 32px;
+    --s-7: 44px;
+    --s-8: 60px;
+
+    /* Radii */
+    --r-0: 0px;
+    --r-1: 2px;
+    --r-2: 4px;
+
+    /* Typography */
+    --font-serif: 'IBM Plex Serif', Georgia, 'Times New Roman', serif;
+    --font-sans:  'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+    --font-mono:  'IBM Plex Mono', ui-monospace, Menlo, monospace;
+
+    /* Elevation */
+    --shadow-1: 0 1px 2px rgba(20,20,20,.06);
+    --shadow-2: 0 8px 30px rgba(20,20,20,.12);
   }
+
   *{box-sizing:border-box;margin:0;padding:0}
   html{scroll-behavior:smooth}
   body{
-    background:var(--cream);
+    background:var(--bg);
     color:var(--ink);
-    font-family:'IBM Plex Serif',Georgia,serif;
+    font-family:var(--font-serif);
     font-size:15px;
-    line-height:1.6;
+    line-height:1.65;
     min-height:100vh;
-    /* Faint horizontal rules mimicking a legal ledger sheet */
+    /* Faint horizontal rules mimicking a ruled legal ledger */
     background-image:
-      repeating-linear-gradient(180deg,transparent 0 27px,rgba(20,20,20,0.035) 27px 28px);
+      repeating-linear-gradient(180deg,transparent 0 27px,rgba(20,20,20,0.028) 27px 28px);
   }
-  a{color:var(--oxblood);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
-  a:hover{color:var(--oxblood-2)}
-  .mono{font-family:'IBM Plex Mono',ui-monospace,Menlo,monospace}
-  .sans{font-family:'IBM Plex Sans',system-ui,sans-serif}
+  a{color:var(--accent);text-decoration:underline;text-underline-offset:2px;text-decoration-thickness:1px}
+  a:hover{color:var(--accent-2)}
+  .mono{font-family:var(--font-mono)}
+  .sans{font-family:var(--font-sans)}
+  .sc{font-variant:small-caps;letter-spacing:.06em}
 
-  .wrap{max-width:1060px;margin:0 auto;padding:0 22px 100px}
+  .wrap{max-width:1080px;margin:0 auto;padding:0 22px 100px}
 
-  /* ── Header (masthead of a brief) ────────────────────────────────────── */
-  header{
-    padding:36px 0 22px;
+  /* ─── Header (masthead) ─────────────────────────────────────────────── */
+  header.mast{
+    padding:30px 0 20px;
     border-bottom:2px solid var(--ink);
     display:flex;justify-content:space-between;align-items:flex-end;gap:24px;flex-wrap:wrap;
   }
-  .brand{display:flex;align-items:center;gap:20px}
-  .brand img{width:72px;height:72px;flex-shrink:0}
+  .brand{display:flex;align-items:center;gap:18px}
+  .brand .seal-wrap{
+    width:78px;height:78px;flex-shrink:0;position:relative;
+    display:flex;align-items:center;justify-content:center;
+  }
+  .brand .seal-wrap::before{
+    content:"";position:absolute;inset:0;border:1.5px double var(--brass);border-radius:50%;
+  }
+  .brand img{width:60px;height:60px}
   .brand .lines{display:flex;flex-direction:column;gap:2px}
   .brand .docket{
-    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.32em;
-    text-transform:uppercase;color:var(--oxblood);font-weight:500;
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.32em;
+    text-transform:uppercase;color:var(--accent);font-weight:500;
   }
   h1{
-    font-family:'IBM Plex Serif',serif;font-weight:600;font-size:42px;
-    line-height:1;letter-spacing:-0.01em;
+    font-family:var(--font-serif);font-weight:600;font-size:44px;
+    line-height:1;letter-spacing:-.012em;
   }
   .subtitle{
-    font-size:13.5px;color:var(--muted);margin-top:6px;max-width:430px;
-    font-family:'IBM Plex Sans',sans-serif;
+    font-size:13.5px;color:var(--muted);margin-top:6px;max-width:440px;
+    font-family:var(--font-sans);
   }
-  .wallet{display:flex;flex-direction:column;align-items:flex-end;gap:6px;text-align:right}
-  .wallet .addr{font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted)}
-  .wallet .fund-hint{font-size:11px;color:var(--muted)}
+
+  .wallet-block{display:flex;flex-direction:column;align-items:flex-end;gap:8px;text-align:right}
+  .wallet-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;justify-content:flex-end}
+  .chip{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    padding:4px 10px;border:1px solid var(--rule-2);color:var(--muted);
+    background:var(--paper);border-radius:var(--r-1);
+    display:inline-flex;align-items:center;gap:6px;
+  }
+  .chip .dot{width:6px;height:6px;background:var(--v-clean);border-radius:50%;display:inline-block}
+  .chip.warn .dot{background:var(--v-unclear)}
+  .chip.err .dot{background:var(--v-infringement)}
+
   button.connect{
     background:var(--ink);color:var(--paper);border:none;
-    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;
-    text-transform:uppercase;padding:11px 18px;cursor:pointer;
-    transition:background .15s ease;
+    font-family:var(--font-mono);font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;padding:11px 18px;cursor:pointer;border-radius:var(--r-1);
+    transition:background .15s;
   }
-  button.connect:hover{background:var(--oxblood-2)}
+  button.connect:hover{background:var(--accent-2)}
+  button.connect.connected{background:var(--accent);cursor:default}
 
-  /* ── Preamble strip (the mission statement of the court) ─────────────── */
+  .link-btn{
+    background:none;border:none;color:var(--accent);cursor:pointer;
+    font-family:var(--font-sans);font-size:12px;text-decoration:underline;padding:0;
+  }
+  .link-btn:hover{color:var(--accent-2)}
+  .fund-hint{font-size:11.5px;color:var(--muted);font-family:var(--font-sans)}
+
+  /* ─── Court Docket strip ────────────────────────────────────────────── */
+  .docket-strip{
+    margin:24px 0 4px;
+    background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-1);
+    box-shadow:var(--shadow-1);
+  }
+  .docket-strip .row-stats{
+    display:grid;grid-template-columns:repeat(4,1fr);
+    border-bottom:1px solid var(--rule);
+  }
+  .docket-strip .stat{
+    padding:16px 20px;border-right:1px solid var(--rule);
+    display:flex;flex-direction:column;gap:2px;
+  }
+  .docket-strip .stat:last-child{border-right:none}
+  .docket-strip .stat .lbl{
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .docket-strip .stat .val{
+    font-family:var(--font-serif);font-size:28px;font-weight:600;color:var(--ink);line-height:1.1;
+  }
+  .docket-strip .stat .val.mono{font-family:var(--font-mono);font-size:22px}
+  .docket-strip .stat .sub{
+    font-size:11.5px;color:var(--muted);font-family:var(--font-sans);margin-top:2px;
+  }
+  .docket-strip .verdict-mini{
+    display:flex;gap:8px;margin-top:5px;flex-wrap:wrap;
+  }
+  .docket-strip .verdict-mini span{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.06em;
+    padding:2px 7px;border:1px solid currentColor;border-radius:var(--r-1);
+  }
+  .docket-strip .row-licenses{
+    padding:12px 20px;display:flex;gap:8px;flex-wrap:wrap;align-items:center;
+  }
+  .docket-strip .row-licenses .lbl{
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--muted);margin-right:6px;
+  }
+  .lic-chip{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.04em;
+    padding:3px 9px;border:1px solid var(--rule-2);color:var(--ink-2);
+    background:var(--paper-2);border-radius:var(--r-1);
+  }
+  @media(max-width:800px){
+    .docket-strip .row-stats{grid-template-columns:repeat(2,1fr)}
+    .docket-strip .stat{border-bottom:1px solid var(--rule)}
+    .docket-strip .stat:nth-child(2){border-right:none}
+  }
+
+  /* ─── Preamble ──────────────────────────────────────────────────────── */
   .preamble{
-    margin:26px 0 4px;
-    padding:24px 26px;
-    background:var(--paper);
-    border:1px solid var(--rule);
+    margin:24px 0 4px;padding:24px 26px 22px 42px;
+    background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-1);
     position:relative;
   }
-  .preamble::before{
-    content:"§";position:absolute;top:12px;left:-2px;
-    font-family:'IBM Plex Serif',serif;font-size:34px;color:var(--oxblood);
-    background:var(--cream);padding:0 8px;line-height:1;
+  .marginalia{
+    position:absolute;left:14px;top:22px;
+    font-family:var(--font-serif);font-size:11px;letter-spacing:.24em;
+    text-transform:uppercase;color:var(--accent);writing-mode:vertical-rl;transform:rotate(180deg);
   }
   .preamble h2{
-    font-family:'IBM Plex Serif',serif;font-weight:600;font-size:22px;
+    font-family:var(--font-serif);font-weight:600;font-size:22px;
     letter-spacing:-.005em;margin-bottom:6px;
   }
-  .preamble p{color:var(--muted);font-size:14px;max-width:820px}
+  .preamble .lede{color:var(--ink-2);font-size:14.5px;max-width:820px;font-style:italic}
+  .preamble p.body-p{color:var(--muted);font-size:13.5px;max-width:820px;margin-top:8px;font-family:var(--font-sans)}
   .preamble .verdicts{
-    display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:16px;
-    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;
+    display:flex;flex-wrap:wrap;gap:6px 10px;margin-top:14px;
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.12em;text-transform:uppercase;
   }
-  .preamble .verdicts span{
-    padding:5px 10px;border:1px solid currentColor;
-  }
+  .preamble .verdicts span{padding:4px 10px;border:1px solid currentColor;border-radius:var(--r-1)}
   .preamble .verdicts .infringement{color:var(--v-infringement)}
   .preamble .verdicts .unclear{color:var(--v-unclear)}
-  .preamble .verdicts .clear{color:var(--v-clear)}
+  .preamble .verdicts .clear{color:var(--v-clean)}
   .preamble .verdicts .retaliatory{color:var(--v-retaliatory)}
 
-  /* ── Tab bar ─────────────────────────────────────────────────────────── */
+  /* ─── Tab bar ───────────────────────────────────────────────────────── */
   nav.tabs{
-    display:flex;margin:34px 0 0;border-bottom:1px solid var(--rule);
-    font-family:'IBM Plex Mono',monospace;
+    display:flex;margin:26px 0 0;border-bottom:1px solid var(--rule);
+    font-family:var(--font-mono);position:relative;
   }
   nav.tabs button{
     background:none;border:none;cursor:pointer;
     font-family:inherit;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
     padding:14px 22px;color:var(--muted);border-bottom:2px solid transparent;
-    margin-bottom:-1px;transition:color .15s;
+    margin-bottom:-1px;transition:color .15s,border-color .15s;
   }
   nav.tabs button:hover{color:var(--ink)}
-  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--oxblood)}
+  nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--accent)}
 
-  .panel{display:none;padding:28px 0}
+  .panel{display:none;padding:26px 0;animation:fade .25s ease}
   .panel.active{display:block}
+  @keyframes fade{from{opacity:0;transform:translateY(4px)}to{opacity:1;transform:none}}
 
-  /* ── Forms / cards ───────────────────────────────────────────────────── */
+  /* ─── Filing card (form) ────────────────────────────────────────────── */
   .filing{
     background:var(--paper);
-    border:1px solid var(--rule);
-    padding:26px 28px;margin-bottom:20px;
-    position:relative;
+    border:1px solid var(--rule);border-radius:var(--r-1);
+    padding:26px 30px 28px;margin-bottom:20px;position:relative;
+    box-shadow:var(--shadow-1);
+  }
+  .filing .sec-marker{
+    position:absolute;left:-38px;top:22px;font-family:var(--font-serif);
+    font-size:12px;letter-spacing:.24em;text-transform:uppercase;
+    color:var(--accent);writing-mode:vertical-rl;transform:rotate(180deg);white-space:nowrap;
   }
   .filing h3{
-    font-family:'IBM Plex Serif',serif;font-weight:600;font-size:19px;
+    font-family:var(--font-serif);font-weight:600;font-size:20px;
     padding-bottom:10px;border-bottom:1px solid var(--rule);margin-bottom:14px;
+    display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:8px;
   }
-  .filing .instr{color:var(--muted);font-size:13.5px;margin-bottom:20px;font-family:'IBM Plex Sans',sans-serif}
+  .filing h3 .cite{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);font-weight:400;
+  }
+  .filing .instr{
+    color:var(--muted);font-size:13.5px;margin-bottom:16px;font-family:var(--font-sans);
+    padding:10px 14px;background:var(--paper-2);border-left:3px solid var(--brass);
+  }
+  .filing .instr strong{color:var(--ink-2)}
   label{
-    display:block;font-family:'IBM Plex Sans',sans-serif;font-size:11px;
+    display:block;font-family:var(--font-sans);font-size:11px;
     letter-spacing:.14em;text-transform:uppercase;font-weight:600;
     color:var(--ink);margin:16px 0 5px;
   }
   label .hint{
     font-weight:400;color:var(--muted);letter-spacing:0;text-transform:none;
-    font-size:11.5px;margin-left:6px;
+    font-size:11.5px;margin-left:6px;font-family:var(--font-sans);
   }
   input,textarea,select{
-    width:100%;font-family:'IBM Plex Mono',monospace;font-size:13px;color:var(--ink);
-    background:var(--cream);border:1px solid var(--rule);padding:10px 12px;
-    transition:border-color .15s,background .15s;
+    width:100%;font-family:var(--font-mono);font-size:13px;color:var(--ink);
+    background:var(--paper-2);border:1px solid var(--rule);padding:10px 12px;border-radius:var(--r-1);
+    transition:border-color .12s,background .12s,box-shadow .12s;
   }
   input:focus,textarea:focus,select:focus{
-    outline:none;border-color:var(--oxblood);background:var(--paper);
+    outline:none;border-color:var(--accent);background:var(--paper);
+    box-shadow:0 0 0 3px rgba(122,32,32,.12);
   }
-  textarea{min-height:70px;resize:vertical;font-size:13px}
+  input.invalid{border-color:var(--v-infringement);background:#fff2f2}
+  input.valid{border-color:var(--v-clean)}
+  .field-msg{font-family:var(--font-sans);font-size:11.5px;color:var(--muted);margin-top:4px;min-height:14px}
+  .field-msg.err{color:var(--v-infringement)}
+  .field-msg.ok{color:var(--v-clean)}
+  textarea{min-height:80px;resize:vertical;font-size:13px}
   .row{display:flex;gap:14px;flex-wrap:wrap}
   .row > div{flex:1;min-width:220px}
 
-  button.act{
-    margin-top:22px;
-    font-family:'IBM Plex Mono',monospace;font-size:11.5px;letter-spacing:.14em;
-    text-transform:uppercase;background:var(--oxblood);color:var(--paper);
-    border:none;padding:13px 24px;cursor:pointer;transition:background .15s;
+  .bond-callout{
+    margin-top:16px;padding:12px 16px;
+    background:var(--paper-3);border:1px dashed var(--brass);border-radius:var(--r-1);
+    display:flex;align-items:baseline;justify-content:space-between;flex-wrap:wrap;gap:8px;
+    font-family:var(--font-sans);font-size:12.5px;color:var(--ink-2);
   }
-  button.act:hover{background:var(--oxblood-2)}
-  button.act:disabled{background:var(--rule);color:var(--muted);cursor:not-allowed}
+  .bond-callout .amt{font-family:var(--font-mono);font-weight:600;color:var(--accent)}
+
+  button.act{
+    margin-top:20px;
+    font-family:var(--font-mono);font-size:11.5px;letter-spacing:.14em;
+    text-transform:uppercase;background:var(--accent);color:var(--paper);
+    border:none;padding:13px 24px;cursor:pointer;border-radius:var(--r-1);
+    transition:background .15s,transform .06s;
+  }
+  button.act:hover{background:var(--accent-2)}
+  button.act:active{transform:translateY(1px)}
+  button.act:disabled{background:var(--rule);color:var(--muted);cursor:not-allowed;transform:none}
+  button.act:focus-visible{outline:2px solid var(--brass);outline-offset:2px}
   button.ghost{
     background:transparent;color:var(--ink);border:1px solid var(--ink);
   }
   button.ghost:hover{background:var(--ink);color:var(--paper)}
 
-  /* ── Status banner ───────────────────────────────────────────────────── */
+  /* ─── Toast stack ───────────────────────────────────────────────────── */
+  .toast-stack{
+    position:fixed;top:20px;right:20px;z-index:1000;
+    display:flex;flex-direction:column;gap:10px;
+    max-width:380px;width:calc(100% - 40px);
+  }
+  .toast{
+    background:var(--paper);border:1px solid var(--ink);border-left:4px solid var(--muted);
+    padding:12px 14px;border-radius:var(--r-1);box-shadow:var(--shadow-2);
+    font-family:var(--font-sans);font-size:13px;color:var(--ink);
+    animation:slidein .28s ease;position:relative;
+  }
+  @keyframes slidein{from{opacity:0;transform:translateX(20px)}to{opacity:1;transform:none}}
+  .toast.dismissing{animation:slideout .3s ease forwards}
+  @keyframes slideout{to{opacity:0;transform:translateX(20px)}}
+  .toast.work{border-left-color:var(--v-unclear)}
+  .toast.ok{border-left-color:var(--v-clean)}
+  .toast.err{border-left-color:var(--v-infringement)}
+  .toast .t-title{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    color:var(--muted);margin-bottom:3px;display:flex;justify-content:space-between;align-items:center;gap:8px;
+  }
+  .toast .t-body{font-size:13px;line-height:1.5}
+  .toast .t-actions{display:flex;gap:10px;margin-top:8px;font-family:var(--font-mono);font-size:11px}
+  .toast .t-actions button, .toast .t-actions a{
+    background:none;border:none;padding:0;cursor:pointer;color:var(--accent);text-decoration:underline;
+    font:inherit;
+  }
+  .toast .close{
+    background:none;border:none;cursor:pointer;color:var(--muted);font-size:16px;line-height:1;padding:0;
+  }
+  .toast .spin-inline{
+    display:inline-block;width:10px;height:10px;border:2px solid var(--v-unclear);
+    border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;
+    margin-right:6px;vertical-align:middle;
+  }
+  @keyframes spin{to{transform:rotate(360deg)}}
+
+  /* ─── Legacy status banner (kept minimal, still used by rulings loading) */
   .status{
-    font-family:'IBM Plex Mono',monospace;font-size:12px;padding:12px 16px;
-    margin-top:18px;display:none;align-items:center;gap:12px;border-left:3px solid;
+    font-family:var(--font-mono);font-size:12px;padding:12px 16px;
+    margin-top:14px;display:none;align-items:center;gap:12px;border-left:3px solid;border-radius:var(--r-1);
   }
   .status.show{display:flex}
-  .status.work{background:#f0ecdc;border-color:var(--amber);color:var(--amber)}
-  .status.ok{background:#e6ede4;border-color:var(--sage);color:var(--sage)}
-  .status.err{background:#f0dbdb;border-color:var(--oxblood);color:var(--oxblood)}
+  .status.work{background:#f0ecdc;border-color:var(--v-unclear);color:var(--v-unclear)}
+  .status.ok{background:#e6ede4;border-color:var(--v-clean);color:var(--v-clean)}
+  .status.err{background:#f0dbdb;border-color:var(--v-infringement);color:var(--v-infringement)}
   .spin{
-    width:12px;height:12px;border:2px solid var(--amber);
-    border-top-color:transparent;border-radius:50%;
-    animation:s .8s linear infinite;flex-shrink:0;
+    width:12px;height:12px;border:2px solid var(--v-unclear);
+    border-top-color:transparent;border-radius:50%;animation:spin .8s linear infinite;flex-shrink:0;
   }
-  @keyframes s{to{transform:rotate(360deg)}}
 
-  /* ── Opinion card (Rulings tab) ──────────────────────────────────────── */
+  /* ─── Opinion card ──────────────────────────────────────────────────── */
   .opinion{
-    background:var(--paper);border:1px solid var(--ink);margin-bottom:22px;
+    background:var(--paper);border:1px solid var(--ink);border-radius:var(--r-1);
+    margin-bottom:24px;box-shadow:var(--shadow-1);overflow:hidden;
   }
-  .opinion .head{
-    display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px;
-    padding:16px 22px;border-bottom:1px solid var(--ink);background:var(--ink);color:var(--paper);
+  .opinion .op-head{
+    padding:18px 24px 14px;background:var(--ink);color:var(--paper);
+    display:flex;justify-content:space-between;align-items:flex-start;flex-wrap:wrap;gap:14px;
+    border-bottom:2px double var(--brass);
   }
-  .opinion .head .case-id{
-    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.2em;text-transform:uppercase;color:var(--cream-2);
+  .opinion .op-head .htitle{display:flex;flex-direction:column;gap:4px}
+  .opinion .op-head .cite-line{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--parchment);
   }
-  .opinion .head .lic{
-    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;
-    padding:3px 10px;border:1px solid var(--cream-2);color:var(--cream-2);
+  .opinion .op-head .opinion-title{
+    font-family:var(--font-serif);font-size:18px;font-weight:600;letter-spacing:-.005em;
   }
-  .opinion .head .verdict-tag{
-    font-family:'IBM Plex Mono',monospace;font-size:11px;letter-spacing:.14em;text-transform:uppercase;
-    padding:5px 12px;background:var(--paper);
+  .opinion .op-head .op-badges{display:flex;flex-direction:column;gap:6px;align-items:flex-end}
+  .opinion .op-head .op-badges .rowb{display:flex;gap:6px;flex-wrap:wrap;justify-content:flex-end}
+  .lic-badge{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;
+    padding:3px 10px;border:1px solid var(--parchment);color:var(--parchment);border-radius:var(--r-1);
+  }
+  .verdict-tag{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.14em;text-transform:uppercase;
+    padding:4px 12px;background:var(--paper);border-radius:var(--r-1);font-weight:500;
   }
   .verdict-INFRINGEMENT_CONFIRMED{color:var(--v-infringement);border:1px solid var(--v-infringement)}
   .verdict-DERIVATIVE_UNCLEAR{color:var(--v-unclear);border:1px solid var(--v-unclear)}
-  .verdict-NO_INFRINGEMENT{color:var(--v-clear);border:1px solid var(--v-clear)}
+  .verdict-NO_INFRINGEMENT{color:var(--v-clean);border:1px solid var(--v-clean)}
   .verdict-RETALIATORY_CLAIM{color:var(--v-retaliatory);border:1px solid var(--v-retaliatory)}
 
-  .opinion .body{padding:22px 24px}
+  .opinion .op-body{padding:26px 30px}
+  .opinion .op-body .section{margin-top:20px}
+  .opinion .op-body .section:first-child{margin-top:0}
   .opinion h4{
-    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.2em;
-    text-transform:uppercase;color:var(--muted);margin:16px 0 6px;font-weight:500;
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.22em;
+    text-transform:uppercase;color:var(--muted);margin-bottom:8px;font-weight:500;
+    padding-bottom:4px;border-bottom:1px solid var(--rule);
   }
-  .opinion h4:first-child{margin-top:0}
-  .opinion .analysis{
-    font-size:15px;line-height:1.65;
-    border-left:2px solid var(--oxblood);padding:2px 0 2px 18px;color:var(--ink);
+  .opinion .prose{
+    font-size:15px;line-height:1.72;color:var(--ink-2);font-family:var(--font-serif);
   }
-  .opinion .facts{
-    display:grid;grid-template-columns:repeat(2,1fr);gap:8px 24px;
-    font-family:'IBM Plex Mono',monospace;font-size:12px;color:var(--muted);
-    padding:12px 0;border-top:1px dashed var(--rule);border-bottom:1px dashed var(--rule);
-    margin-top:12px;
+  .opinion .prose.pulled{
+    border-left:3px solid var(--accent);padding:2px 0 2px 18px;
   }
-  .opinion .facts strong{color:var(--ink);font-weight:600}
-  .opinion .parties{
-    display:flex;gap:22px;flex-wrap:wrap;margin-top:10px;
-    font-family:'IBM Plex Mono',monospace;font-size:11.5px;color:var(--muted);
+
+  /* Timeline chevrons */
+  .timeline{
+    display:flex;gap:0;margin:14px 0 4px;padding:8px 0;
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
   }
-  .opinion .parties .p{display:flex;flex-direction:column;gap:1px}
-  .opinion .parties .p .role{font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;color:var(--oxblood)}
-  .opinion .evidence-list{
-    font-family:'IBM Plex Mono',monospace;font-size:12.5px;
-    display:flex;flex-direction:column;gap:4px;padding:6px 0;
+  .timeline .step{
+    flex:1;padding:8px 14px 8px 22px;background:var(--paper-2);color:var(--muted);
+    position:relative;border:1px solid var(--rule);border-right:none;
+    clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%,12px 50%);
+    text-align:center;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
   }
-  .opinion .evidence-list a{word-break:break-all}
-  .opinion .foot{
-    padding:14px 24px;background:var(--cream-2);border-top:1px solid var(--rule);
+  .timeline .step:first-child{clip-path:polygon(0 0,calc(100% - 12px) 0,100% 50%,calc(100% - 12px) 100%,0 100%)}
+  .timeline .step:last-child{clip-path:polygon(0 0,100% 0,100% 100%,0 100%,12px 50%);border-right:1px solid var(--rule)}
+  .timeline .step.done{background:var(--ink);color:var(--paper);border-color:var(--ink)}
+  .timeline .step.current{background:var(--accent);color:var(--paper);border-color:var(--accent);font-weight:600}
+
+  /* Parties block */
+  .parties{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  }
+  .party{
+    padding:12px 14px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
+  }
+  .party .role{
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:4px;
+  }
+  .party .addr-row{display:flex;align-items:center;gap:8px;flex-wrap:wrap;font-family:var(--font-mono);font-size:12px}
+  .party .addr-row .addr{color:var(--ink);font-weight:500}
+  .icon-btn{
+    background:none;border:1px solid var(--rule);border-radius:var(--r-1);cursor:pointer;
+    padding:3px 7px;font-family:var(--font-mono);font-size:10px;color:var(--muted);
+    transition:all .12s;
+  }
+  .icon-btn:hover{border-color:var(--accent);color:var(--accent)}
+  .party .bond-line{
+    font-family:var(--font-mono);font-size:11.5px;color:var(--muted);margin-top:6px;
+  }
+  .party .bond-line strong{color:var(--ink)}
+  @media(max-width:700px){.parties{grid-template-columns:1fr}}
+
+  /* URL chip */
+  .url-chip{
+    display:inline-flex;align-items:center;gap:6px;
+    padding:6px 10px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
+    font-family:var(--font-mono);font-size:12px;color:var(--ink-2);text-decoration:none;
+    max-width:100%;overflow:hidden;position:relative;transition:all .12s;
+  }
+  .url-chip:hover{background:var(--paper);border-color:var(--accent);color:var(--accent)}
+  .url-chip .host{color:var(--accent);font-weight:500}
+  .url-chip .path{color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:320px}
+  .url-chip .full-url{
+    display:none;position:absolute;bottom:calc(100% + 6px);left:0;
+    background:var(--ink);color:var(--paper);padding:8px 10px;border-radius:var(--r-1);
+    font-size:11px;white-space:normal;word-break:break-all;max-width:420px;z-index:10;
+    box-shadow:var(--shadow-2);
+  }
+  .url-chip:hover .full-url{display:block}
+  .url-row{
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .url-row .url-label{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.18em;text-transform:uppercase;
+    color:var(--muted);
+  }
+  .url-pair{
+    display:grid;grid-template-columns:1fr 1fr;gap:14px;
+  }
+  .url-pair .side{
+    padding:12px 14px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
+  }
+  .url-pair .side.target{background:#fbf2f2;border-color:#e2c0c0}
+  .url-pair .side .side-label{
+    font-family:var(--font-mono);font-size:9.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);margin-bottom:6px;
+  }
+  @media(max-width:700px){.url-pair{grid-template-columns:1fr}}
+
+  /* Evidence list */
+  .evidence-list{
+    display:flex;flex-direction:column;gap:8px;
+  }
+  .evidence-item{
+    display:flex;flex-direction:column;gap:4px;
+    padding:10px 12px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
+  }
+  .evidence-item .top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:6px}
+  .evidence-item .num{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;text-transform:uppercase;color:var(--accent);
+  }
+  .evidence-item .note{font-size:12.5px;color:var(--muted);font-style:italic}
+
+  /* Remedy callout */
+  .remedy-callout{
+    padding:16px 20px;background:linear-gradient(180deg,#faf0dd,#f5e4bd);
+    border:1.5px solid var(--brass);border-radius:var(--r-1);margin-top:12px;
+    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;
+  }
+  .remedy-callout .rlabel{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.2em;text-transform:uppercase;
+    color:var(--accent);
+  }
+  .remedy-callout .rval{
+    font-family:var(--font-serif);font-weight:600;font-size:19px;color:var(--ink);
+  }
+  .remedy-callout .rsub{
+    font-size:12.5px;color:var(--muted);font-family:var(--font-sans);
+  }
+
+  /* Signals */
+  .signals{
+    display:flex;gap:16px;flex-wrap:wrap;margin-top:10px;
+  }
+  .signal-badge{
+    display:inline-flex;align-items:baseline;gap:6px;
+    padding:6px 12px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
+    font-family:var(--font-mono);font-size:11px;
+  }
+  .signal-badge .k{color:var(--muted);letter-spacing:.1em;text-transform:uppercase;font-size:10px}
+  .signal-badge .v{color:var(--ink);font-weight:600}
+
+  /* Bond distribution table */
+  .bond-table{
+    width:100%;border-collapse:collapse;margin-top:10px;
+    font-family:var(--font-mono);font-size:12.5px;
+  }
+  .bond-table th, .bond-table td{
+    padding:9px 12px;text-align:left;border-bottom:1px solid var(--rule);
+  }
+  .bond-table th{
+    font-size:10px;letter-spacing:.18em;text-transform:uppercase;color:var(--muted);font-weight:600;
+    background:var(--paper-2);
+  }
+  .bond-table tr:last-child td{border-bottom:none;font-weight:600;background:var(--paper-2)}
+  .bond-table td.amt{text-align:right;color:var(--ink)}
+  .bond-table td.pos{color:var(--v-clean)}
+  .bond-table td.neg{color:var(--v-infringement)}
+
+  /* Split bar visualization */
+  .split-bar{
+    display:flex;height:26px;border:1px solid var(--ink);border-radius:var(--r-1);
+    overflow:hidden;margin:10px 0 6px;font-family:var(--font-mono);font-size:11px;
+  }
+  .split-bar .c-side{background:var(--v-clean);color:var(--paper);display:flex;align-items:center;padding:0 10px}
+  .split-bar .r-side{background:var(--accent);color:var(--paper);display:flex;align-items:center;justify-content:flex-end;padding:0 10px}
+  .split-bar-labels{
+    display:flex;justify-content:space-between;font-family:var(--font-mono);font-size:10px;
+    letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
+  }
+
+  /* Foot of opinion */
+  .opinion .op-foot{
+    padding:14px 24px;background:var(--paper-2);border-top:1px solid var(--rule);
     display:flex;justify-content:space-between;flex-wrap:wrap;gap:10px;
-    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
+    font-family:var(--font-mono);font-size:11px;color:var(--muted);
   }
-  .opinion .signals{
-    display:flex;gap:14px;font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
-    margin-top:12px;flex-wrap:wrap;
-  }
-  .opinion .signals span strong{color:var(--ink)}
+  .opinion .op-foot .cite-line strong{color:var(--ink)}
 
+  /* Empty state */
   .empty{
-    text-align:center;padding:50px 20px;color:var(--muted);
-    font-style:italic;font-size:15px;
+    text-align:center;padding:60px 20px;color:var(--muted);
+    font-style:italic;font-size:15px;font-family:var(--font-serif);
   }
-  .empty small{display:block;margin-top:8px;font-size:12.5px;font-style:normal}
+  .empty small{display:block;margin-top:8px;font-size:12.5px;font-style:normal;font-family:var(--font-sans)}
 
-  /* ── Rulings index (list of cards) ───────────────────────────────────── */
-  .idx-row{
-    padding:16px 20px;background:var(--paper);border:1px solid var(--rule);
-    margin-bottom:10px;cursor:pointer;transition:border-color .15s,background .15s;
-    display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:12px;
+  /* ─── Rulings index (list) ──────────────────────────────────────────── */
+  .filters-row{
+    display:flex;gap:12px;flex-wrap:wrap;align-items:center;
+    padding:14px 16px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
+    margin-bottom:16px;
   }
-  .idx-row:hover{border-color:var(--oxblood);background:var(--cream-2)}
-  .idx-row .case-num{font-family:'IBM Plex Mono',monospace;font-weight:600}
-  .idx-row .badge{
-    font-family:'IBM Plex Mono',monospace;font-size:10.5px;letter-spacing:.14em;
-    text-transform:uppercase;padding:4px 10px;
+  .filters-row label{margin:0;font-size:10px;letter-spacing:.18em}
+  .filters-row select{width:auto;min-width:150px;padding:6px 10px;font-size:12px}
+  .filters-row .count{
+    margin-left:auto;font-family:var(--font-mono);font-size:11px;color:var(--muted);
+    letter-spacing:.1em;text-transform:uppercase;
+  }
+  .idx-row{
+    padding:16px 20px;background:var(--paper);border:1px solid var(--rule);border-radius:var(--r-1);
+    margin-bottom:10px;cursor:pointer;transition:all .15s;
+    display:grid;grid-template-columns:auto 1fr auto auto;gap:14px;align-items:center;
+  }
+  .idx-row:hover{border-color:var(--accent);background:var(--paper-2);transform:translateX(2px)}
+  .idx-row:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+  .idx-row .case-num{
+    font-family:var(--font-mono);font-weight:600;color:var(--ink);font-size:13px;
+    padding:4px 10px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
   }
   .idx-row .snippet{
-    font-size:13px;color:var(--muted);flex:1;min-width:200px;
-    font-family:'IBM Plex Sans',sans-serif;
+    font-size:13px;color:var(--muted);
+    font-family:var(--font-sans);
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .idx-row .snippet strong{color:var(--ink);font-weight:500}
+  .idx-row .lic-mini{
+    font-family:var(--font-mono);font-size:10.5px;padding:3px 8px;
+    border:1px solid var(--rule-2);color:var(--ink-2);background:var(--paper-2);border-radius:var(--r-1);
+  }
+  .idx-row .status-mini{
+    font-family:var(--font-mono);font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;
+    padding:4px 10px;border:1px solid currentColor;border-radius:var(--r-1);
+  }
+  @media(max-width:640px){
+    .idx-row{grid-template-columns:1fr auto;grid-template-rows:auto auto}
+    .idx-row .snippet{grid-column:1/-1}
   }
 
-  /* ── Footer ──────────────────────────────────────────────────────────── */
-  footer{
-    margin-top:70px;padding:20px 0;
+  /* ─── Modal ─────────────────────────────────────────────────────────── */
+  .modal-backdrop{
+    display:none;position:fixed;inset:0;z-index:900;
+    background:rgba(20,20,20,.55);backdrop-filter:blur(2px);
+    justify-content:center;align-items:flex-start;padding:60px 20px 20px;
+    overflow-y:auto;
+  }
+  .modal-backdrop.open{display:flex}
+  .modal{
+    background:var(--paper);border:1px solid var(--ink);border-radius:var(--r-1);
+    max-width:720px;width:100%;box-shadow:var(--shadow-2);
+    animation:modalin .25s ease;
+  }
+  @keyframes modalin{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:none}}
+  .modal .m-head{
+    padding:18px 24px;background:var(--ink);color:var(--paper);
+    display:flex;justify-content:space-between;align-items:center;
+    border-bottom:2px double var(--brass);border-radius:var(--r-1) var(--r-1) 0 0;
+  }
+  .modal .m-head h3{
+    font-family:var(--font-serif);font-size:19px;font-weight:600;
+  }
+  .modal .m-head .close-x{
+    background:none;border:1px solid var(--parchment);color:var(--parchment);
+    padding:4px 10px;cursor:pointer;font-family:var(--font-mono);font-size:11px;border-radius:var(--r-1);
+  }
+  .modal .m-head .close-x:hover{background:var(--parchment);color:var(--ink)}
+  .modal .m-body{padding:24px 28px 28px}
+  .modal .m-body h4{
+    font-family:var(--font-mono);font-size:11px;letter-spacing:.22em;text-transform:uppercase;
+    color:var(--accent);margin:20px 0 8px;
+  }
+  .modal .m-body h4:first-child{margin-top:0}
+  .modal .m-body p, .modal .m-body ol{
+    font-family:var(--font-sans);font-size:13.5px;color:var(--ink-2);line-height:1.65;
+  }
+  .modal .m-body ol{padding-left:20px}
+  .modal .m-body ol li{margin-bottom:6px}
+  .modal .m-body strong{color:var(--ink)}
+  .modal .m-body .flow{
+    display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin:10px 0 18px;
+  }
+  .modal .m-body .flow .step{
+    padding:12px;background:var(--paper-2);border:1px solid var(--rule);border-radius:var(--r-1);
+    text-align:center;
+  }
+  .modal .m-body .flow .step .n{
+    font-family:var(--font-mono);font-size:10px;letter-spacing:.2em;color:var(--accent);
+  }
+  .modal .m-body .flow .step .t{
+    font-family:var(--font-serif);font-weight:600;font-size:13px;margin-top:4px;
+  }
+  .modal .m-body .flow .step .d{font-size:11.5px;color:var(--muted);margin-top:4px;font-family:var(--font-sans)}
+  @media(max-width:640px){.modal .m-body .flow{grid-template-columns:repeat(2,1fr)}}
+
+  /* ─── Footer ────────────────────────────────────────────────────────── */
+  footer.court-foot{
+    margin-top:70px;padding:24px 0 6px;
     border-top:2px solid var(--ink);
-    font-family:'IBM Plex Mono',monospace;font-size:11px;color:var(--muted);
-    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    font-family:var(--font-mono);font-size:11px;color:var(--muted);
+    display:flex;flex-direction:column;gap:8px;
   }
+  footer .foot-top{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px}
+  footer .foot-top strong{color:var(--ink);font-family:var(--font-serif);font-size:12.5px;letter-spacing:0;text-transform:none;font-weight:600}
   footer .cite{letter-spacing:.06em}
+  footer .foot-bottom{
+    display:flex;justify-content:space-between;flex-wrap:wrap;gap:12px;
+    padding-top:8px;border-top:1px dashed var(--rule);
+  }
+  footer a{font-family:var(--font-mono);color:var(--accent)}
 
+  /* Scroll shadow on horizontal tabs (mobile) */
   @media(max-width:640px){
     h1{font-size:32px}
     nav.tabs{overflow-x:auto}
     nav.tabs button{padding:12px 14px;font-size:10.5px;flex-shrink:0}
-    .opinion .facts{grid-template-columns:1fr}
-    .brand img{width:56px;height:56px}
+    .brand .seal-wrap{width:60px;height:60px}
+    .brand img{width:44px;height:44px}
+    .filing{padding:22px 20px 26px}
+    .filing .sec-marker{display:none}
+    .opinion .op-body{padding:22px 20px}
+    .toast-stack{top:10px;right:10px;left:10px;width:auto;max-width:none}
   }
 </style>
 </head>
 <body>
 <div class="wrap">
 
-<header>
+<header class="mast">
   <div class="brand">
-    <img src="/logo.svg" alt="LicenseHawk seal" />
+    <div class="seal-wrap">
+      <img src="/logo.svg" alt="LicenseHawk seal" />
+    </div>
     <div class="lines">
       <span class="docket">Docket · Open-Source License Enforcement</span>
       <h1>LicenseHawk</h1>
       <p class="subtitle">On-chain tribunal for GPL, MIT, BSD, Apache, and AGPL license claims — evidence is read directly from the web by validators, verdicts are ratified by consensus of meaning.</p>
     </div>
   </div>
-  <div class="wallet">
-    <button class="connect" id="connectBtn">Connect Wallet</button>
-    <span class="addr" id="addrLabel"></span>
-    <a class="fund-hint" href="https://studio.genlayer.com" target="_blank" rel="noopener">Fund address from Studio Accounts →</a>
+  <div class="wallet-block">
+    <div class="wallet-row">
+      <span class="chip" id="netChip"><span class="dot"></span><span id="netLabel">studionet</span></span>
+      <button class="connect" id="connectBtn">Connect Wallet</button>
+    </div>
+    <div class="wallet-row" style="gap:12px">
+      <span class="mono" id="addrLabel" style="font-size:11px;color:var(--muted)"></span>
+      <button class="icon-btn" id="copyAddrBtn" title="Copy address" style="display:none">copy</button>
+    </div>
+    <div class="wallet-row" style="gap:12px">
+      <button class="link-btn" id="howBtn">How the Court works →</button>
+      <a class="fund-hint" href="https://studio.genlayer.com" target="_blank" rel="noopener">Fund from Studio Accounts →</a>
+    </div>
   </div>
 </header>
 
+<!-- ── Court Docket strip ──────────────────────────────────────────────── -->
+<section class="docket-strip" id="docketStrip">
+  <div class="row-stats">
+    <div class="stat">
+      <span class="lbl">Total Cases</span>
+      <span class="val" id="s-total">—</span>
+      <span class="sub">on the docket</span>
+    </div>
+    <div class="stat">
+      <span class="lbl">Verdicts Rendered</span>
+      <span class="val" id="s-ruled">—</span>
+      <div class="verdict-mini" id="s-verdicts"></div>
+    </div>
+    <div class="stat">
+      <span class="lbl">Bonds Locked</span>
+      <span class="val mono" id="s-bonds">—</span>
+      <span class="sub">total posted, all cases</span>
+    </div>
+    <div class="stat">
+      <span class="lbl">Awaiting Answer</span>
+      <span class="val" id="s-awaiting">—</span>
+      <span class="sub">respondent has not filed</span>
+    </div>
+  </div>
+  <div class="row-licenses">
+    <span class="lbl">Recognized Licenses</span>
+    <span id="s-licenses"><span class="lic-chip">loading…</span></span>
+  </div>
+</section>
+
 <section class="preamble">
+  <span class="marginalia">§ Preamble</span>
   <h2>Copyleft without a court — until now.</h2>
-  <p>File a claim naming the upstream repository and the alleged downstream infringer. Post a bond. The respondent posts a matching bond and their defense URLs. On <em>adjudicate</em>, GenLayer validators fetch both codebases, re-read the license text, and independently rule; consensus is reached on the <em>meaning</em> of the verdict, not its wording. Bonds are then distributed per the ruling.</p>
+  <p class="lede">File a claim naming the upstream repository and the alleged downstream infringer. Post a bond.</p>
+  <p class="body-p">The respondent posts a matching bond and their defense URLs. On <em>adjudicate</em>, GenLayer validators fetch both codebases, re-read the license text, and independently rule; consensus is reached on the <em>meaning</em> of the verdict, not its wording. Bonds are then distributed per the ruling.</p>
   <div class="verdicts">
     <span class="infringement">Infringement Confirmed</span>
     <span class="unclear">Derivative Unclear</span>
@@ -330,20 +790,22 @@
 </section>
 
 <nav class="tabs">
-  <button class="active" data-tab="file">I · File Case</button>
-  <button data-tab="respond">II · Respond</button>
-  <button data-tab="adjudicate">III · Adjudicate &amp; Enforce</button>
-  <button data-tab="rulings">Rulings Index</button>
+  <button class="active" data-tab="file">§ I · File Case</button>
+  <button data-tab="respond">§ II · Respond</button>
+  <button data-tab="adjudicate">§ III · Adjudicate &amp; Enforce</button>
+  <button data-tab="rulings">§ IV · Rulings Index</button>
 </nav>
 
 <!-- ═══ TAB I ═════════════════════════════════════════════════════════════ -->
 <div class="panel active" id="tab-file">
   <div class="filing">
-    <h3>Petition to File a License Enforcement Case</h3>
-    <p class="instr">As the rightsholder, you submit your own source repository URL, name the allegedly infringing downstream URL, and post a bond. The bond is locked until enforcement.</p>
+    <span class="sec-marker">§ I · Petition</span>
+    <h3>Petition to File a License Enforcement Case <span class="cite">Form No. LH-1</span></h3>
+    <p class="instr">As the rightsholder, you submit your own source repository URL, name the allegedly infringing downstream URL, and post a bond. <strong>The bond is locked until enforcement.</strong> Choose a bond amount you consider proportionate to the harm; the AI Jury does not adjust it.</p>
 
     <label>Respondent Wallet Address <span class="hint">the party you accuse</span></label>
-    <input id="f_respondent" placeholder="0x..." />
+    <input id="f_respondent" placeholder="0x…" spellcheck="false" />
+    <div class="field-msg" id="f_respondent_msg"></div>
 
     <div class="row">
       <div>
@@ -368,16 +830,23 @@
       </div>
     </div>
 
-    <label>Claimant Source URL <span class="hint">raw file or archive; e.g. raw.githubusercontent.com/...</span></label>
-    <input id="f_source" placeholder="https://raw.githubusercontent.com/you/project/main/src/lib.py" />
+    <label>Claimant Source URL <span class="hint">raw file or archive; e.g. raw.githubusercontent.com/…</span></label>
+    <input id="f_source" placeholder="https://raw.githubusercontent.com/you/project/main/src/lib.py" spellcheck="false" />
+    <div class="field-msg" id="f_source_msg"></div>
 
     <label>Target URL <span class="hint">the allegedly infringing product's source</span></label>
-    <input id="f_target" placeholder="https://raw.githubusercontent.com/them/product/main/vendor/lib.py" />
+    <input id="f_target" placeholder="https://raw.githubusercontent.com/them/product/main/vendor/lib.py" spellcheck="false" />
+    <div class="field-msg" id="f_target_msg"></div>
 
     <label>Claim Notes <span class="hint">theory of the case, cite the clause</span></label>
     <textarea id="f_notes" placeholder="Target ships our GPL-3.0 parser inside a proprietary binary without publishing corresponding source; §5 obligation unmet."></textarea>
 
-    <button class="act" id="f_btn">Post Bond &amp; File Case</button>
+    <div class="bond-callout">
+      <span>Amount required to file this petition:</span>
+      <span class="amt" id="f_bond_echo">— GEN</span>
+    </div>
+
+    <button class="act" id="f_btn" disabled>Post Bond &amp; File Case</button>
     <div class="status" id="f_status"></div>
   </div>
 </div>
@@ -385,8 +854,9 @@
 <!-- ═══ TAB II ════════════════════════════════════════════════════════════ -->
 <div class="panel" id="tab-respond">
   <div class="filing">
-    <h3>Answer &amp; Defense</h3>
-    <p class="instr">Only the named respondent may answer. Post a matching bond and upload defense URLs — your own source, prior-art URLs predating the claim, or a written license grant. The AI Jury will fetch each one.</p>
+    <span class="sec-marker">§ II · Answer</span>
+    <h3>Answer &amp; Defense <span class="cite">Form No. LH-2</span></h3>
+    <p class="instr">Only the named respondent may answer. <strong>Post a matching bond and upload defense URLs</strong> — your own source, prior-art URLs predating the claim, or a written license grant. The AI Jury will fetch each one.</p>
 
     <div class="row">
       <div><label>Case ID</label><input id="r_id" placeholder="0" /></div>
@@ -396,13 +866,19 @@
       </div>
     </div>
 
-    <label>Defense URLs <span class="hint">JSON array of {"url": "...", "note": "..."} — at least one</span></label>
+    <label>Defense URLs <span class="hint">JSON array of {"url":"…","note":"…"} — at least one</span></label>
     <textarea id="r_urls" placeholder='[{"url":"https://raw.githubusercontent.com/us/product/main/NOTICE","note":"our attribution file"},{"url":"https://raw.githubusercontent.com/us/product/main/vendor/lib.py","note":"predates their release"}]'></textarea>
+    <div class="field-msg" id="r_urls_msg"></div>
 
     <label>Defense Notes <span class="hint">explain each URL; cite counter-evidence</span></label>
     <textarea id="r_notes" placeholder="Our NOTICE file (URL 1) already ships the required MIT attribution. URL 2 shows our repo history predates the claimant's release."></textarea>
 
-    <button class="act" id="r_btn">Post Bond &amp; Respond</button>
+    <div class="bond-callout">
+      <span>Amount required to answer this case:</span>
+      <span class="amt" id="r_bond_echo">— GEN</span>
+    </div>
+
+    <button class="act" id="r_btn" disabled>Post Bond &amp; Respond</button>
     <div class="status" id="r_status"></div>
   </div>
 </div>
@@ -410,44 +886,130 @@
 <!-- ═══ TAB III ═══════════════════════════════════════════════════════════ -->
 <div class="panel" id="tab-adjudicate">
   <div class="filing">
-    <h3>Convene the AI Tribunal</h3>
-    <p class="instr">Once both bonds are posted, either party may request adjudication. Validators fetch both codebases and the defense evidence, re-read the license text, and rule. Expect one to two minutes for consensus.</p>
+    <span class="sec-marker">§ III.a · Adjudicate</span>
+    <h3>Convene the AI Tribunal <span class="cite">Motion LH-3a</span></h3>
+    <p class="instr">Once both bonds are posted, either party may request adjudication. <strong>Validators fetch both codebases and the defense evidence, re-read the license text, and rule.</strong> Expect one to two minutes for consensus.</p>
     <div class="row">
       <div><label>Case ID</label><input id="a_id" placeholder="0" /></div>
     </div>
-    <button class="act" id="a_btn">Request Adjudication</button>
+    <button class="act" id="a_btn" disabled>Request Adjudication</button>
     <div class="status" id="a_status"></div>
   </div>
 
   <div class="filing">
-    <h3>Enforce Verdict &amp; Distribute Bonds</h3>
-    <p class="instr">After adjudication, either party may call <span class="mono">enforce</span>. Bonds are distributed by the ruling: an infringing respondent forfeits its bond to the claimant; a cleared respondent recovers its bond and takes the claimant's as defense cost; an unclear case returns each bond to its poster; a retaliatory claim forfeits the claimant's entire bond.</p>
+    <span class="sec-marker">§ III.b · Enforce</span>
+    <h3>Enforce Verdict &amp; Distribute Bonds <span class="cite">Motion LH-3b</span></h3>
+    <p class="instr">After adjudication, either party may call <span class="mono">enforce</span>. Bonds are distributed by the ruling: <strong>an infringing respondent forfeits its bond to the claimant</strong>; a cleared respondent recovers its bond and takes the claimant's as defense cost; an unclear case returns each bond to its poster; a retaliatory claim forfeits the claimant's entire bond.</p>
     <div class="row">
       <div><label>Case ID</label><input id="e_id" placeholder="0" /></div>
     </div>
-    <button class="act" id="e_btn">Enforce Ruling</button>
+    <button class="act" id="e_btn" disabled>Enforce Ruling</button>
     <div class="status" id="e_status"></div>
   </div>
 </div>
 
 <!-- ═══ TAB IV — Rulings (public read) ═══════════════════════════════════ -->
 <div class="panel" id="tab-rulings">
-  <div class="filing">
-    <h3>Rulings Index</h3>
-    <p class="instr">Every filed case, newest first. No wallet required — this tab is a public reading room. Click a row to open the full opinion.</p>
-    <button class="act ghost" id="idx_btn">Refresh Index</button>
+  <div class="filing" style="padding:22px 24px">
+    <h3 style="border:none;padding:0;margin:0 0 6px">Rulings Index <span class="cite">Public Reading Room</span></h3>
+    <p class="instr" style="margin-bottom:14px">Every filed case, newest first. No wallet required. Click any row to open the full opinion.</p>
+
+    <div class="filters-row">
+      <label for="filt_verdict">Verdict</label>
+      <select id="filt_verdict">
+        <option value="ALL">All Verdicts</option>
+        <option value="INFRINGEMENT_CONFIRMED">Infringement Confirmed</option>
+        <option value="DERIVATIVE_UNCLEAR">Derivative Unclear</option>
+        <option value="NO_INFRINGEMENT">No Infringement</option>
+        <option value="RETALIATORY_CLAIM">Retaliatory Claim</option>
+        <option value="__PENDING__">Pending (no ruling yet)</option>
+      </select>
+      <label for="filt_lic">License</label>
+      <select id="filt_lic"><option value="ALL">All Licenses</option></select>
+      <label for="filt_sort">Sort</label>
+      <select id="filt_sort">
+        <option value="new">Newest first</option>
+        <option value="old">Oldest first</option>
+      </select>
+      <span class="count" id="idx_count"></span>
+      <button class="act ghost" id="idx_btn" style="margin:0;padding:8px 16px;font-size:11px">Refresh</button>
+    </div>
+
     <div class="status" id="idx_status"></div>
-    <div id="idx_list" style="margin-top:16px"></div>
+    <div id="idx_list"></div>
   </div>
   <div id="opinion_out"></div>
 </div>
 
-<footer>
-  <span class="cite">LicenseHawk · Intelligent Contract on GenLayer studionet</span>
-  <span class="mono" id="contractLabel">contract: —</span>
+<footer class="court-foot">
+  <div class="foot-top">
+    <span><strong>LicenseHawk</strong> · Intelligent Contract on GenLayer studionet — an on-chain tribunal for open-source license disputes.</span>
+    <span class="cite" id="contractLabel">contract: —</span>
+  </div>
+  <div class="foot-bottom">
+    <span>
+      <a id="explorerLink" href="https://explorer-studio.genlayer.com" target="_blank" rel="noopener">View on Explorer →</a>
+      &nbsp;·&nbsp;
+      <a href="https://github.com/genlayer" target="_blank" rel="noopener">GitHub →</a>
+      &nbsp;·&nbsp;
+      <a href="https://docs.genlayer.com" target="_blank" rel="noopener">GenLayer Docs →</a>
+    </span>
+    <span>Verdicts by consensus of meaning. No custodian, no clerk, no fee schedule.</span>
+  </div>
 </footer>
 
 </div>
+
+<!-- ═══ Modal: How the Court works ═══════════════════════════════════════ -->
+<div class="modal-backdrop" id="howModal" role="dialog" aria-modal="true" aria-labelledby="howTitle">
+  <div class="modal">
+    <div class="m-head">
+      <h3 id="howTitle">How the Court works</h3>
+      <button class="close-x" id="howClose" aria-label="Close">close ✕</button>
+    </div>
+    <div class="m-body">
+      <p>LicenseHawk is a four-step, on-chain tribunal for open-source license claims. Every step lives on GenLayer's Studio Network; the AI Jury reads unstructured code and legal text directly from the web.</p>
+
+      <h4>Procedure</h4>
+      <div class="flow">
+        <div class="step"><div class="n">§ I</div><div class="t">File</div><div class="d">Claimant posts bond &amp; names respondent.</div></div>
+        <div class="step"><div class="n">§ II</div><div class="t">Respond</div><div class="d">Respondent posts matching bond &amp; defense URLs.</div></div>
+        <div class="step"><div class="n">§ III.a</div><div class="t">Adjudicate</div><div class="d">Validators re-fetch code, re-read license, rule.</div></div>
+        <div class="step"><div class="n">§ III.b</div><div class="t">Enforce</div><div class="d">Bonds distributed per verdict; case closed.</div></div>
+      </div>
+
+      <h4>Consensus on meaning, not wording</h4>
+      <p>Validators must agree on the <strong>verdict</strong> (INFRINGEMENT_CONFIRMED / DERIVATIVE_UNCLEAR / NO_INFRINGEMENT / RETALIATORY_CLAIM) and, for infringement rulings, the <strong>remedy</strong>. Prose reasoning may diverge. One-step tolerance is granted only around <em>Derivative Unclear</em>.</p>
+
+      <h4>Bond distribution</h4>
+      <table class="bond-table">
+        <thead>
+          <tr><th>Verdict</th><th>Claimant receives</th><th>Respondent receives</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Infringement Confirmed</td><td>own bond + respondent's</td><td>0</td></tr>
+          <tr><td>No Infringement</td><td>0</td><td>own bond + claimant's</td></tr>
+          <tr><td>Derivative Unclear</td><td>own bond returned</td><td>own bond returned</td></tr>
+          <tr><td>Retaliatory Claim</td><td>0 (forfeited)</td><td>own bond + claimant's</td></tr>
+        </tbody>
+      </table>
+
+      <h4>Remedies (Infringement only)</h4>
+      <ol>
+        <li><strong>RELEASE_SOURCE</strong> — respondent must publish corresponding source (GPL / AGPL).</li>
+        <li><strong>ADD_ATTRIBUTION</strong> — respondent must ship license text and notice (MIT / BSD / Apache).</li>
+        <li><strong>REMOVE_CODE</strong> — respondent must strip the infringing code.</li>
+        <li><strong>PAY_DAMAGES</strong> — a monetary remedy is warranted (rare).</li>
+      </ol>
+
+      <h4>Why on-chain?</h4>
+      <p>Solidity cannot fetch raw source code from the web, cannot read a license document, and cannot exercise judgement on derivative works. Strip out the web reads and the LLM and there is no product left — this is why LicenseHawk lives on GenLayer.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ═══ Toast stack ═══════════════════════════════════════════════════════ -->
+<div class="toast-stack" id="toastStack" aria-live="polite" aria-atomic="false"></div>
 
 <script type="module">
 import { createClient, createAccount } from "genlayer-js";
@@ -457,6 +1019,7 @@ import { CONTRACT_ADDRESS, CHAIN } from "./src/config.js";
 const chain = CHAIN === "studio" ? studionet : localnet;
 const CHAIN_ID_HEX = "0x" + chain.id.toString(16);
 const RPC_URL = chain.rpcUrls?.default?.http?.[0] || "https://studio.genlayer.com/api";
+const EXPLORER = "https://explorer-studio.genlayer.com";
 
 let account = null;
 let client  = null;
@@ -464,15 +1027,70 @@ const readOnlyClient = createClient({ chain });
 
 const $ = (id) => document.getElementById(id);
 $("contractLabel").textContent = "contract: " + (CONTRACT_ADDRESS || "not configured");
+$("netLabel").textContent = CHAIN === "studio" ? "studionet" : "localnet";
+$("explorerLink").href = EXPLORER + (CONTRACT_ADDRESS ? "/address/" + CONTRACT_ADDRESS : "");
 
-// ── Status helpers ─────────────────────────────────────────────────────────
+// ── Toast stack ────────────────────────────────────────────────────────────
+const toastStack = $("toastStack");
+let toastSeq = 0;
+function toast({ kind="info", title="Notice", body="", txHash=null, sticky=false, id=null }){
+  const tid = id || ("t" + (++toastSeq));
+  // If id already exists, update in place
+  const existing = document.getElementById(tid);
+  const html = buildToast(tid, kind, title, body, txHash);
+  if (existing){
+    existing.outerHTML = html;
+  } else {
+    toastStack.insertAdjacentHTML("beforeend", html);
+  }
+  const el = document.getElementById(tid);
+  el.querySelector(".close").addEventListener("click", () => dismissToast(tid));
+  const copyBtn = el.querySelector("[data-copy]");
+  if (copyBtn){
+    copyBtn.addEventListener("click", () => {
+      navigator.clipboard.writeText(copyBtn.dataset.copy).then(()=>{
+        copyBtn.textContent = "copied";
+        setTimeout(()=>{ if(copyBtn) copyBtn.textContent = "copy tx"; }, 1400);
+      });
+    });
+  }
+  if (!sticky){
+    setTimeout(() => dismissToast(tid), kind === "err" ? 9000 : 6000);
+  }
+  return tid;
+}
+function buildToast(id, kind, title, body, txHash){
+  const spin = kind === "work" ? '<span class="spin-inline"></span>' : '';
+  const acts = txHash ? `
+    <div class="t-actions">
+      <button data-copy="${txHash}">copy tx</button>
+      <a href="${EXPLORER}/tx/${txHash}" target="_blank" rel="noopener">explorer ↗</a>
+    </div>` : '';
+  return `
+    <div class="toast ${kind}" id="${id}" role="status">
+      <div class="t-title">
+        <span>${spin}${title}</span>
+        <button class="close" aria-label="Dismiss">✕</button>
+      </div>
+      <div class="t-body">${body}</div>
+      ${acts}
+    </div>`;
+}
+function dismissToast(id){
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.classList.add("dismissing");
+  setTimeout(() => el.remove(), 300);
+}
+
+// Small legacy status hook (used for docket loading + rulings)
 function setStatus(el, kind, msg, spin=false){
   el.className = "status show " + kind;
   el.innerHTML = (spin ? '<span class="spin"></span>' : '') + '<span>' + msg + '</span>';
 }
 function clearStatus(el){ el.className = "status"; }
 
-// ── Network switch ─────────────────────────────────────────────────────────
+// ── Network switch ────────────────────────────────────────────────────────
 async function ensureNetwork(){
   if (!window.ethereum) return;
   try {
@@ -489,7 +1107,7 @@ async function ensureNetwork(){
           chainName: "GenLayer Studio Network",
           nativeCurrency: { name: "GEN Token", symbol: "GEN", decimals: 18 },
           rpcUrls: [RPC_URL],
-          blockExplorerUrls: ["https://explorer-studio.genlayer.com"],
+          blockExplorerUrls: [EXPLORER],
         }],
       });
     } else { throw err; }
@@ -500,7 +1118,7 @@ async function ensureNetwork(){
 $("connectBtn").addEventListener("click", async () => {
   try {
     if (!window.ethereum) {
-      $("addrLabel").textContent = "MetaMask required — install and reload";
+      toast({ kind:"err", title:"Wallet required", body:"MetaMask (or a compatible injected wallet) is required. Install and reload." });
       return;
     }
     await ensureNetwork();
@@ -509,25 +1127,48 @@ $("connectBtn").addEventListener("click", async () => {
     client  = createClient({ chain, account });
     const a = account.address;
     $("addrLabel").textContent = a.slice(0,6) + "…" + a.slice(-4);
+    $("addrLabel").title = a;
+    $("copyAddrBtn").style.display = "inline-block";
     $("connectBtn").textContent = "Connected";
+    $("connectBtn").classList.add("connected");
+    // Enable action buttons
+    enableWalletButtons(true);
+    toast({ kind:"ok", title:"Wallet connected", body:`Signing as <span class="mono">${a.slice(0,6)}…${a.slice(-4)}</span> on <strong>${$("netLabel").textContent}</strong>.` });
   } catch (e) {
-    $("addrLabel").textContent = "Wallet connection error";
+    toast({ kind:"err", title:"Connection error", body: e.shortMessage || e.message || String(e) });
     console.error(e);
   }
 });
+$("copyAddrBtn").addEventListener("click", () => {
+  if (!account) return;
+  navigator.clipboard.writeText(account.address).then(()=>{
+    const b = $("copyAddrBtn"); const old = b.textContent;
+    b.textContent = "copied"; setTimeout(()=>{ b.textContent = old; }, 1400);
+  });
+});
 
-function ensureReady(statusEl){
-  if (!client || !account){ setStatus(statusEl, "err", "Please connect your wallet first."); return false; }
+function enableWalletButtons(on){
+  ["f_btn","r_btn","a_btn","e_btn"].forEach(id => {
+    const el = $(id); if (!el) return;
+    if (on) validateSubmitButtons();
+    else el.disabled = true;
+  });
+}
+
+function ensureReady(){
+  if (!client || !account){
+    toast({ kind:"err", title:"Wallet not connected", body:"Please connect your wallet first." });
+    return false;
+  }
   if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "TO_BE_FILLED_AFTER_DEPLOY"){
-    setStatus(statusEl, "err", "Contract address is not configured in src/config.js.");
+    toast({ kind:"err", title:"Contract not configured", body:"Contract address is missing from src/config.js." });
     return false;
   }
   return true;
 }
 
-// ── Contract IO ────────────────────────────────────────────────────────────
-async function writeTx(fn, args, value, statusEl){
-  setStatus(statusEl, "work", "Signing & waiting for network consensus…", true);
+// ── Contract IO helpers ────────────────────────────────────────────────────
+async function writeTx(fn, args, value){
   const hash = await client.writeContract({
     address: CONTRACT_ADDRESS, functionName: fn, args,
     value: value ? BigInt(value) : 0n,
@@ -549,97 +1190,166 @@ document.querySelectorAll("nav.tabs button").forEach(b => {
     document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
     b.classList.add("active");
     $("tab-" + b.dataset.tab).classList.add("active");
+    if (b.dataset.tab === "rulings" && !allCases.length) loadRulings();
   });
 });
 
+// ── Modal ──────────────────────────────────────────────────────────────────
+$("howBtn").addEventListener("click", () => $("howModal").classList.add("open"));
+$("howClose").addEventListener("click", () => $("howModal").classList.remove("open"));
+$("howModal").addEventListener("click", (e) => { if (e.target === $("howModal")) $("howModal").classList.remove("open"); });
+document.addEventListener("keydown", (e) => { if (e.key === "Escape") $("howModal").classList.remove("open"); });
+
+// ── Live validation ────────────────────────────────────────────────────────
+const isAddr = (s) => /^0x[0-9a-fA-F]{40}$/.test(s || "");
+const isUrl  = (s) => /^https?:\/\/\S+$/i.test(s || "");
+function markField(el, kind, msg){
+  el.classList.remove("valid","invalid");
+  const msgEl = $(el.id + "_msg");
+  if (kind === "valid"){ el.classList.add("valid"); if(msgEl){ msgEl.className="field-msg ok"; msgEl.textContent = msg || ""; } }
+  else if (kind === "invalid"){ el.classList.add("invalid"); if(msgEl){ msgEl.className="field-msg err"; msgEl.textContent = msg || ""; } }
+  else if (msgEl){ msgEl.className="field-msg"; msgEl.textContent=""; }
+}
+function validateFileForm(){
+  const resp = $("f_respondent").value.trim();
+  const src  = $("f_source").value.trim();
+  const tgt  = $("f_target").value.trim();
+  const bond = $("f_bond").value.trim();
+  if (resp) markField($("f_respondent"), isAddr(resp) ? "valid" : "invalid", isAddr(resp) ? "valid address" : "expected 0x + 40 hex chars");
+  else markField($("f_respondent"), "clear");
+  if (src) markField($("f_source"), isUrl(src) ? "valid" : "invalid", isUrl(src) ? "valid URL" : "expected http(s)://…");
+  else markField($("f_source"), "clear");
+  if (tgt){
+    let msg = isUrl(tgt) ? "valid URL" : "expected http(s)://…";
+    let k = isUrl(tgt) ? "valid" : "invalid";
+    if (isUrl(tgt) && src && tgt === src){ k = "invalid"; msg = "target and source URLs must differ"; }
+    markField($("f_target"), k, msg);
+  } else markField($("f_target"), "clear");
+  $("f_bond_echo").textContent = bond ? (Number(bond).toLocaleString() + " GEN") : "— GEN";
+  const ok = isAddr(resp) && isUrl(src) && isUrl(tgt) && src !== tgt && Number(bond) > 0;
+  $("f_btn").disabled = !(ok && client && account);
+}
+function validateRespondForm(){
+  const id = $("r_id").value.trim();
+  const urls = $("r_urls").value.trim();
+  const bond = $("r_bond").value.trim();
+  let urlsOk = false;
+  if (urls){
+    try {
+      const parsed = JSON.parse(urls);
+      urlsOk = Array.isArray(parsed) && parsed.length > 0 && parsed.every(x => x && typeof x.url === "string" && x.url.length);
+      markField($("r_urls"), urlsOk ? "valid" : "invalid",
+        urlsOk ? `parsed ${parsed.length} URL${parsed.length===1?"":"s"}` : 'expected JSON array like [{"url":"…","note":"…"}]');
+    } catch { markField($("r_urls"), "invalid", "invalid JSON"); }
+  } else markField($("r_urls"), "clear");
+  $("r_bond_echo").textContent = bond ? (Number(bond).toLocaleString() + " GEN") : "— GEN";
+  $("r_btn").disabled = !(id !== "" && urlsOk && Number(bond) > 0 && client && account);
+}
+function validateAdjudicateForm(){
+  $("a_btn").disabled = !($("a_id").value.trim() !== "" && client && account);
+}
+function validateEnforceForm(){
+  $("e_btn").disabled = !($("e_id").value.trim() !== "" && client && account);
+}
+function validateSubmitButtons(){
+  validateFileForm(); validateRespondForm(); validateAdjudicateForm(); validateEnforceForm();
+}
+["f_respondent","f_source","f_target","f_bond","f_license","f_notes"].forEach(id => $(id).addEventListener("input", validateFileForm));
+["r_id","r_urls","r_notes","r_bond"].forEach(id => $(id).addEventListener("input", validateRespondForm));
+$("a_id").addEventListener("input", validateAdjudicateForm);
+$("e_id").addEventListener("input", validateEnforceForm);
+
 // ── TAB I — File case ──────────────────────────────────────────────────────
 $("f_btn").addEventListener("click", async () => {
-  const el = $("f_status");
-  if (!ensureReady(el)) return;
+  if (!ensureReady()) return;
+  const respondent = $("f_respondent").value.trim();
+  const source = $("f_source").value.trim();
+  const target = $("f_target").value.trim();
+  const license = $("f_license").value;
+  const notes = $("f_notes").value.trim();
+  const bond = $("f_bond").value.trim();
+  const workId = toast({ kind:"work", title:"Filing petition", body:"Signing tx and awaiting network finalization…", sticky:true });
   try {
-    const respondent = $("f_respondent").value.trim();
-    const source = $("f_source").value.trim();
-    const target = $("f_target").value.trim();
-    const license = $("f_license").value;
-    const notes = $("f_notes").value.trim();
-    const bond = $("f_bond").value.trim();
-    if (!respondent || !source || !target || !bond){
-      setStatus(el, "err", "Respondent address, source URL, target URL, and bond are required.");
-      return;
-    }
-    await writeTx("file_case", [respondent, source, target, license, notes], bond, el);
+    const hash = await writeTx("file_case", [respondent, source, target, license, notes], bond);
     const total = Number(await readContract("get_total_cases", []));
-    setStatus(el, "ok", "Bond posted. Case #" + (total - 1) + " filed. Share the case id with the respondent.");
+    toast({ id: workId, kind:"ok", title:`Case #${total-1} filed`, body:`Bond of <strong>${Number(bond).toLocaleString()} GEN</strong> posted. Share case id <span class="mono">#${total-1}</span> with the respondent.`, txHash: hash });
+    loadDocket(); loadRulings(true);
   } catch (e){
-    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    toast({ id: workId, kind:"err", title:"Filing failed", body: e.shortMessage || e.message || String(e) });
     console.error(e);
   }
 });
 
 // ── TAB II — Respond ───────────────────────────────────────────────────────
 $("r_btn").addEventListener("click", async () => {
-  const el = $("r_status");
-  if (!ensureReady(el)) return;
+  if (!ensureReady()) return;
+  const id = $("r_id").value.trim();
+  const urls = $("r_urls").value.trim();
+  const notes = $("r_notes").value.trim();
+  const bond = $("r_bond").value.trim();
+  const workId = toast({ kind:"work", title:`Answering case #${id}`, body:"Posting bond and defense URLs…", sticky:true });
   try {
-    const id = $("r_id").value.trim();
-    const urls = $("r_urls").value.trim();
-    const notes = $("r_notes").value.trim();
-    const bond = $("r_bond").value.trim();
-    if (!id || !urls || !bond){
-      setStatus(el, "err", "Case ID, defense URLs, and bond are required.");
-      return;
-    }
-    try { JSON.parse(urls); }
-    catch { setStatus(el, "err", "Defense URLs must be valid JSON array."); return; }
-    await writeTx("respond_case", [id, urls, notes], bond, el);
-    setStatus(el, "ok", "Answer filed for case #" + id + ". Case is now CONTESTED; either party may request adjudication.");
+    const hash = await writeTx("respond_case", [id, urls, notes], bond);
+    toast({ id: workId, kind:"ok", title:`Answer filed for case #${id}`, body:"Case is now <strong>CONTESTED</strong>; either party may request adjudication.", txHash: hash });
+    loadDocket(); loadRulings(true);
   } catch (e){
-    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    toast({ id: workId, kind:"err", title:"Answer failed", body: e.shortMessage || e.message || String(e) });
     console.error(e);
   }
 });
 
 // ── TAB III — Adjudicate ───────────────────────────────────────────────────
 $("a_btn").addEventListener("click", async () => {
-  const el = $("a_status");
-  if (!ensureReady(el)) return;
+  if (!ensureReady()) return;
+  const id = $("a_id").value.trim();
+  const workId = toast({ kind:"work", title:`Adjudicating case #${id}`, body:"AI tribunal fetching both codebases and re-reading the license text… (1–2 min)", sticky:true });
   try {
-    const id = $("a_id").value.trim();
-    if (!id){ setStatus(el, "err", "Case ID is required."); return; }
-    setStatus(el, "work", "AI tribunal fetching both codebases and re-reading the license… (1–2 minutes)", true);
     const hash = await client.writeContract({
       address: CONTRACT_ADDRESS, functionName: "adjudicate", args: [id], value: 0n,
     });
     await client.waitForTransactionReceipt({ hash, status: "FINALIZED" });
-    setStatus(el, "ok", "Ruling entered for case #" + id + ". Open the Rulings Index to read the opinion.");
-    $("e_id").value = id;
+    toast({ id: workId, kind:"ok", title:`Ruling entered — case #${id}`, body:"Verdict ratified by consensus. Open the Rulings Index to read the opinion.", txHash: hash });
+    $("e_id").value = id; validateEnforceForm();
+    loadDocket(); loadRulings(true);
   } catch (e){
-    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    toast({ id: workId, kind:"err", title:"Adjudication failed", body: e.shortMessage || e.message || String(e) });
     console.error(e);
   }
 });
 
 // ── TAB III — Enforce ──────────────────────────────────────────────────────
 $("e_btn").addEventListener("click", async () => {
-  const el = $("e_status");
-  if (!ensureReady(el)) return;
+  if (!ensureReady()) return;
+  const id = $("e_id").value.trim();
+  const workId = toast({ kind:"work", title:`Enforcing case #${id}`, body:"Distributing bonds per verdict…", sticky:true });
   try {
-    const id = $("e_id").value.trim();
-    if (!id){ setStatus(el, "err", "Case ID is required."); return; }
-    await writeTx("enforce", [id], 0, el);
-    setStatus(el, "ok", "Bonds distributed for case #" + id + ".");
+    const hash = await writeTx("enforce", [id], 0);
+    toast({ id: workId, kind:"ok", title:`Bonds distributed — case #${id}`, body:"Case is closed. See the Rulings Index for the settlement.", txHash: hash });
+    loadDocket(); loadRulings(true);
   } catch (e){
-    setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
+    toast({ id: workId, kind:"err", title:"Enforcement failed", body: e.shortMessage || e.message || String(e) });
     console.error(e);
   }
 });
 
-// ── TAB IV — Rulings Index ─────────────────────────────────────────────────
+// ── Labels ─────────────────────────────────────────────────────────────────
 const STATUS_LABEL = {
   CASE_FILED: "Filed — awaiting answer",
   CASE_CONTESTED: "Contested — awaiting tribunal",
   CASE_ADJUDICATED: "Ruled — awaiting enforcement",
   CASE_ENFORCED: "Enforced — closed",
+};
+const STATUS_SHORT = {
+  CASE_FILED: "Filed",
+  CASE_CONTESTED: "Contested",
+  CASE_ADJUDICATED: "Adjudicated",
+  CASE_ENFORCED: "Enforced",
+};
+const STATUS_COLOR = {
+  CASE_FILED: "var(--s-filed)",
+  CASE_CONTESTED: "var(--s-contested)",
+  CASE_ADJUDICATED: "var(--s-ruled)",
+  CASE_ENFORCED: "var(--s-enforced)",
 };
 const VERDICT_LABEL = {
   INFRINGEMENT_CONFIRMED: "Infringement Confirmed",
@@ -647,154 +1357,413 @@ const VERDICT_LABEL = {
   NO_INFRINGEMENT: "No Infringement",
   RETALIATORY_CLAIM: "Retaliatory Claim",
 };
+const REMEDY_LABEL = {
+  RELEASE_SOURCE: "Release Corresponding Source",
+  ADD_ATTRIBUTION: "Add Attribution Notice",
+  REMOVE_CODE: "Remove Infringing Code",
+  PAY_DAMAGES: "Pay Monetary Damages",
+  NONE: "No action required",
+};
+const REMEDY_SUB = {
+  RELEASE_SOURCE: "Publish full corresponding source under the license terms.",
+  ADD_ATTRIBUTION: "Ship the license text and required notice with the product.",
+  REMOVE_CODE: "Strip the infringing code from the target codebase.",
+  PAY_DAMAGES: "Monetary remedy; rare, reserved for wilful infringement.",
+  NONE: "This verdict prescribes no action.",
+};
 
-async function loadRulings(){
-  const el = $("idx_status"), list = $("idx_list");
+// ── Court Docket loader ────────────────────────────────────────────────────
+async function loadDocket(){
+  if (!CONTRACT_ADDRESS) return;
+  try {
+    const [totalRaw, licsRaw] = await Promise.all([
+      readPublic("get_total_cases", []),
+      readPublic("get_supported_licenses", []).catch(() => "[]"),
+    ]);
+    const total = Number(totalRaw);
+    $("s-total").textContent = total;
+
+    // Licenses
+    let licenses = [];
+    try { licenses = JSON.parse(licsRaw); } catch { licenses = []; }
+    $("s-licenses").innerHTML = licenses.length
+      ? licenses.map(l => `<span class="lic-chip">${escapeHtml(l)}</span>`).join(" ")
+      : `<span class="lic-chip">none listed</span>`;
+    // Also populate the rulings filter
+    const licSel = $("filt_lic");
+    if (licSel.options.length <= 1){
+      licenses.forEach(l => {
+        const opt = document.createElement("option"); opt.value = l; opt.textContent = l; licSel.appendChild(opt);
+      });
+    }
+
+    if (total === 0){
+      $("s-ruled").textContent = "0";
+      $("s-verdicts").innerHTML = "";
+      $("s-bonds").textContent = "0";
+      $("s-awaiting").textContent = "0";
+      return;
+    }
+
+    // Fetch all cases (bounded by total which is expected to be small on a demo net)
+    const ids = []; for (let i = 0; i < total; i++) ids.push(i);
+    const cases = await Promise.all(ids.map(async i => {
+      try { const raw = await readPublic("get_case", [String(i)]);
+        return typeof raw === "string" ? JSON.parse(raw) : raw;
+      } catch { return null; }
+    }));
+    allCases = cases.map((c, i) => c ? { id: i, ...c } : null).filter(Boolean);
+
+    const verdictCounts = { INFRINGEMENT_CONFIRMED:0, DERIVATIVE_UNCLEAR:0, NO_INFRINGEMENT:0, RETALIATORY_CLAIM:0 };
+    let ruled = 0, awaiting = 0, bondsTotal = 0n;
+    for (const c of allCases){
+      bondsTotal += BigInt(c.claimant_bond || 0) + BigInt(c.respondent_bond || 0);
+      if (c.status === "CASE_ADJUDICATED" || c.status === "CASE_ENFORCED"){
+        ruled++;
+        if (verdictCounts[c.verdict] !== undefined) verdictCounts[c.verdict]++;
+      }
+      if (c.status === "CASE_FILED") awaiting++;
+    }
+    $("s-ruled").textContent = ruled;
+    $("s-bonds").textContent = bondsTotal.toString();
+    $("s-awaiting").textContent = awaiting;
+
+    const vMap = [
+      ["INFRINGEMENT_CONFIRMED", "infringement", "var(--v-infringement)"],
+      ["DERIVATIVE_UNCLEAR", "unclear", "var(--v-unclear)"],
+      ["NO_INFRINGEMENT", "clean", "var(--v-clean)"],
+      ["RETALIATORY_CLAIM", "retaliatory", "var(--v-retaliatory)"],
+    ];
+    $("s-verdicts").innerHTML = vMap.map(([k,,c]) =>
+      `<span style="color:${c}" title="${VERDICT_LABEL[k]}">${verdictCounts[k]} ${k.split("_")[0][0]+k.split("_")[1][0]}</span>`
+    ).join("");
+
+    // If rulings list is empty, render it too (since we already fetched everything).
+    if (!$("idx_list").hasChildNodes()) renderRulingsList();
+  } catch (e){
+    console.warn("docket load failed", e);
+  }
+}
+
+// ── TAB IV — Rulings Index ─────────────────────────────────────────────────
+let allCases = [];
+async function loadRulings(silent=false){
+  const el = $("idx_status");
   if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "TO_BE_FILLED_AFTER_DEPLOY"){
-    setStatus(el, "err", "Contract address is not configured.");
-    return;
+    setStatus(el, "err", "Contract address is not configured."); return;
   }
   try {
-    setStatus(el, "work", "Reading case ledger from the chain…", true);
+    if (!silent) setStatus(el, "work", "Reading case ledger from the chain…", true);
     const total = Number(await readPublic("get_total_cases", []));
     if (total === 0){
       clearStatus(el);
-      list.innerHTML = '<p class="empty">The docket is empty.<small>File the first case on tab I.</small></p>';
+      $("idx_list").innerHTML = '<p class="empty">The docket is empty.<small>File the first case on § I.</small></p>';
+      $("idx_count").textContent = "";
       return;
     }
-    const ids = [];
-    for (let i = total - 1; i >= Math.max(0, total - 12); i--) ids.push(i);
-    const rows = await Promise.all(ids.map(async i => {
-      try {
-        const raw = await readPublic("get_case", [String(i)]);
+    const ids = []; for (let i = 0; i < total; i++) ids.push(i);
+    const cases = await Promise.all(ids.map(async i => {
+      try { const raw = await readPublic("get_case", [String(i)]);
         const d = typeof raw === "string" ? JSON.parse(raw) : raw;
-        return { id: i, d };
+        return { id: i, ...d };
       } catch (e){ return { id: i, err: e.shortMessage || e.message || String(e) }; }
     }));
+    allCases = cases;
     clearStatus(el);
-    list.innerHTML = rows.map(r => {
-      if (r.err) return `<div class="idx-row"><span class="case-num">#${r.id}</span><span class="snippet">error: ${escapeHtml(r.err).slice(0,120)}</span></div>`;
-      const d = r.d;
-      const isRuled = d.status === "CASE_ADJUDICATED" || d.status === "CASE_ENFORCED";
-      const tag = isRuled
-        ? `<span class="badge verdict-${d.verdict}">${VERDICT_LABEL[d.verdict] || d.verdict}</span>`
-        : `<span class="badge" style="border:1px solid var(--muted);color:var(--muted)">${STATUS_LABEL[d.status] || d.status}</span>`;
-      const snip = isRuled && d.reason
-        ? `<span class="snippet">${escapeHtml(d.reason.slice(0, 130))}${d.reason.length > 130 ? "…" : ""}</span>`
-        : `<span class="snippet">${d.license_type} · ${shortUrl(d.target_url)}</span>`;
-      return `<div class="idx-row" data-open="${r.id}"><span class="case-num">Case No. ${r.id}</span>${snip}${tag}</div>`;
-    }).join("");
+    renderRulingsList();
   } catch (e){
     setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
     console.error(e);
   }
 }
+function renderRulingsList(){
+  const list = $("idx_list");
+  const vFilt = $("filt_verdict").value;
+  const lFilt = $("filt_lic").value;
+  const sort  = $("filt_sort").value;
+  let rows = allCases.slice();
+  if (vFilt !== "ALL"){
+    if (vFilt === "__PENDING__"){
+      rows = rows.filter(r => !r.err && r.status !== "CASE_ADJUDICATED" && r.status !== "CASE_ENFORCED");
+    } else {
+      rows = rows.filter(r => !r.err && r.verdict === vFilt);
+    }
+  }
+  if (lFilt !== "ALL"){
+    rows = rows.filter(r => !r.err && r.license_type === lFilt);
+  }
+  rows.sort((a,b) => sort === "old" ? a.id - b.id : b.id - a.id);
+  $("idx_count").textContent = rows.length + " of " + allCases.length + " shown";
 
-$("idx_btn").addEventListener("click", loadRulings);
-document.querySelector('nav.tabs button[data-tab="rulings"]').addEventListener("click", () => {
-  if (!$("idx_list").hasChildNodes()) loadRulings();
-});
+  if (rows.length === 0){
+    list.innerHTML = '<p class="empty">No cases match these filters.<small>Try widening the verdict or license selection.</small></p>';
+    return;
+  }
+  list.innerHTML = rows.map(r => {
+    if (r.err) return `<div class="idx-row"><span class="case-num">#${r.id}</span><span class="snippet">error: ${escapeHtml(r.err).slice(0,120)}</span></div>`;
+    const d = r;
+    const isRuled = d.status === "CASE_ADJUDICATED" || d.status === "CASE_ENFORCED";
+    const tag = isRuled
+      ? `<span class="status-mini verdict-${d.verdict}">${VERDICT_LABEL[d.verdict] || d.verdict}</span>`
+      : `<span class="status-mini" style="color:${STATUS_COLOR[d.status]||'var(--muted)'}">${STATUS_SHORT[d.status] || d.status}</span>`;
+    const snip = isRuled && d.reason
+      ? `<span class="snippet"><strong>Ruling:</strong> ${escapeHtml(d.reason.slice(0, 150))}${d.reason.length > 150 ? "…" : ""}</span>`
+      : `<span class="snippet"><strong>Target:</strong> ${escapeHtml(shortUrl(d.target_url))}</span>`;
+    return `<div class="idx-row" data-open="${r.id}" tabindex="0" role="button" aria-label="Open case ${r.id}">
+      <span class="case-num">Case No. ${r.id}</span>
+      ${snip}
+      <span class="lic-mini">${escapeHtml(d.license_type||"")}</span>
+      ${tag}
+    </div>`;
+  }).join("");
+}
+$("idx_btn").addEventListener("click", () => loadRulings());
+["filt_verdict","filt_lic","filt_sort"].forEach(id => $(id).addEventListener("change", renderRulingsList));
+
 document.addEventListener("click", async (ev) => {
   const row = ev.target.closest("[data-open]");
   if (!row) return;
-  const id = row.dataset.open;
+  await openOpinion(row.dataset.open);
+});
+document.addEventListener("keydown", async (ev) => {
+  if (ev.key !== "Enter") return;
+  const row = ev.target.closest && ev.target.closest("[data-open]");
+  if (!row) return;
+  await openOpinion(row.dataset.open);
+});
+
+async function openOpinion(id){
   try {
     const raw = await readPublic("get_case", [String(id)]);
     const d = typeof raw === "string" ? JSON.parse(raw) : raw;
     $("opinion_out").innerHTML = renderOpinion(id, d);
+    // Wire up copy buttons inside the opinion
+    $("opinion_out").querySelectorAll("[data-copytxt]").forEach(b => {
+      b.addEventListener("click", () => {
+        navigator.clipboard.writeText(b.dataset.copytxt).then(()=>{
+          const old = b.textContent; b.textContent = "copied";
+          setTimeout(()=>{ b.textContent = old; }, 1400);
+        });
+      });
+    });
     $("opinion_out").scrollIntoView({ behavior: "smooth", block: "start" });
   } catch (e){
     $("opinion_out").innerHTML = `<div class="empty">Could not load case #${id}: ${escapeHtml(e.message || String(e))}</div>`;
   }
-});
+}
+
+// ── Opinion renderer ───────────────────────────────────────────────────────
+function timelineHtml(status){
+  const steps = [
+    ["CASE_FILED",       "Filed"],
+    ["CASE_CONTESTED",   "Contested"],
+    ["CASE_ADJUDICATED", "Adjudicated"],
+    ["CASE_ENFORCED",    "Enforced"],
+  ];
+  const idx = steps.findIndex(s => s[0] === status);
+  return `<div class="timeline">${steps.map(([k, lbl], i) => {
+    const cls = i < idx ? "done" : (i === idx ? "current" : "");
+    return `<div class="step ${cls}">§ ${["I","II","III.a","III.b"][i]} — ${lbl}</div>`;
+  }).join("")}</div>`;
+}
+
+function partyBlock(role, addr, bond, payout){
+  const short = addr ? addr.slice(0,6) + "…" + addr.slice(-4) : "—";
+  const link = addr ? `${EXPLORER}/address/${addr}` : "#";
+  return `
+    <div class="party">
+      <div class="role">${role}</div>
+      <div class="addr-row">
+        <span class="addr" title="${escapeHtml(addr||'')}">${escapeHtml(short)}</span>
+        <button class="icon-btn" data-copytxt="${escapeHtml(addr||'')}" title="Copy address">copy</button>
+        <a class="icon-btn" href="${link}" target="_blank" rel="noopener">explorer ↗</a>
+      </div>
+      <div class="bond-line">Posted bond: <strong>${Number(bond||0).toLocaleString()} GEN</strong>${payout != null ? ` · received: <strong>${Number(payout).toLocaleString()} GEN</strong>` : ""}</div>
+    </div>`;
+}
+
+function urlChip(url){
+  if (!url) return "";
+  let host = "", path = "";
+  try { const u = new URL(url); host = u.hostname; path = (u.pathname + u.search) || "/"; }
+  catch { host = String(url).slice(0,32); path = ""; }
+  return `<a class="url-chip" href="${escapeAttr(url)}" target="_blank" rel="noopener">
+    <span class="host">${escapeHtml(host)}</span><span class="path">${escapeHtml(path)}</span>
+    <span class="full-url">${escapeHtml(url)}</span>
+  </a>`;
+}
+
+function evidenceItems(items){
+  if (!items || items.length === 0){
+    return `<div class="evidence-item"><span class="note">— No evidence URLs submitted with the answer —</span></div>`;
+  }
+  return items.map((it, i) => `
+    <div class="evidence-item">
+      <div class="top">
+        <span class="num">Ex. ${String(i+1).padStart(2,"0")}</span>
+        ${urlChip(it.url)}
+      </div>
+      ${it.note ? `<div class="note">${escapeHtml(it.note)}</div>` : ""}
+    </div>`).join("");
+}
+
+function bondDistributionTable(d){
+  const c = Number(d.claimant_bond || 0);
+  const r = Number(d.respondent_bond || 0);
+  const pc = Number(d.payout_claimant || 0);
+  const pr = Number(d.payout_respondent || 0);
+  const total = c + r;
+  const cDelta = pc - c;
+  const rDelta = pr - r;
+  const fmt = (n) => n.toLocaleString() + " GEN";
+  const cw = total > 0 ? Math.round((pc / total) * 100) : 50;
+  const rw = 100 - cw;
+  return `
+    <div class="split-bar">
+      <div class="c-side" style="width:${cw}%">Claimant ${cw}%</div>
+      <div class="r-side" style="width:${rw}%">Respondent ${rw}%</div>
+    </div>
+    <div class="split-bar-labels"><span>← ${fmt(pc)}</span><span>${fmt(pr)} →</span></div>
+    <table class="bond-table">
+      <thead><tr><th>Party</th><th class="amt">Posted</th><th class="amt">Received</th><th class="amt">Net</th></tr></thead>
+      <tbody>
+        <tr><td>Claimant</td><td class="amt">${fmt(c)}</td><td class="amt">${fmt(pc)}</td><td class="amt ${cDelta>=0?'pos':'neg'}">${cDelta>=0?'+':''}${fmt(cDelta)}</td></tr>
+        <tr><td>Respondent</td><td class="amt">${fmt(r)}</td><td class="amt">${fmt(pr)}</td><td class="amt ${rDelta>=0?'pos':'neg'}">${rDelta>=0?'+':''}${fmt(rDelta)}</td></tr>
+        <tr><td>Pool total</td><td class="amt">${fmt(total)}</td><td class="amt">${fmt(pc+pr)}</td><td class="amt">— conserved —</td></tr>
+      </tbody>
+    </table>`;
+}
 
 function renderOpinion(id, d){
   const isRuled = d.status === "CASE_ADJUDICATED" || d.status === "CASE_ENFORCED";
   const enforced = d.status === "CASE_ENFORCED";
-
   const verdictHead = isRuled
     ? `<span class="verdict-tag verdict-${d.verdict}">${VERDICT_LABEL[d.verdict] || d.verdict}</span>`
-    : `<span class="verdict-tag" style="color:var(--muted);border:1px solid var(--muted)">${STATUS_LABEL[d.status] || d.status}</span>`;
+    : `<span class="verdict-tag" style="color:${STATUS_COLOR[d.status]||'var(--muted)'};border:1px solid ${STATUS_COLOR[d.status]||'var(--muted)'}">${STATUS_SHORT[d.status] || d.status}</span>`;
 
-  const defenseLinks = (d.defense_urls || []).map(u =>
-    `<a href="${u.url}" target="_blank" rel="noopener">${shortUrl(u.url)}</a>${u.note ? ` — <span style="color:var(--muted)">${escapeHtml(u.note)}</span>` : ""}`
-  ).join("");
+  const rulingSection = isRuled ? `
+    <div class="section">
+      <h4>V · Analysis of Governing License</h4>
+      <div class="prose pulled">${escapeHtml(d.license_analysis || "—")}</div>
+    </div>
+    <div class="section">
+      <h4>VI · Reasoning &amp; Ruling</h4>
+      <div class="prose pulled">${escapeHtml(d.reason || "—")}</div>
+      <div class="signals">
+        <span class="signal-badge"><span class="k">Similarity</span><span class="v">${escapeHtml(d.similarity_signal || "—")}</span></span>
+        <span class="signal-badge"><span class="k">Attribution</span><span class="v">${escapeHtml(d.attribution_status || "—")}</span></span>
+        <span class="signal-badge"><span class="k">Verdict</span><span class="v">${escapeHtml(d.verdict || "—")}</span></span>
+      </div>
+    </div>
+    <div class="section">
+      <h4>VII · Remedy Ordered</h4>
+      <div class="remedy-callout">
+        <div>
+          <div class="rlabel">Remedy</div>
+          <div class="rval">${escapeHtml(REMEDY_LABEL[d.remedy] || d.remedy || "NONE")}</div>
+          <div class="rsub">${escapeHtml(REMEDY_SUB[d.remedy] || "")}</div>
+        </div>
+      </div>
+    </div>` : `
+    <div class="section">
+      <h4>V · Current Posture</h4>
+      <div class="prose pulled">${STATUS_LABEL[d.status] || d.status}. The case is awaiting its next procedural step before a ruling can be entered.</div>
+    </div>`;
 
-  const total = (d.claimant_bond || 0) + (d.respondent_bond || 0);
-  const payoutBlock = enforced
-    ? `<h4>Enforcement Distribution</h4>
-       <div class="facts">
-         <div>Claimant received <strong>${d.payout_claimant}</strong> of ${total} pool</div>
-         <div>Respondent received <strong>${d.payout_respondent}</strong> of ${total} pool</div>
-       </div>`
-    : "";
-
-  const analysisBlock = isRuled
-    ? `<h4>License Analysis</h4>
-       <div class="analysis">${escapeHtml(d.license_analysis || "—")}</div>
-       <h4>Reasoning</h4>
-       <div class="analysis">${escapeHtml(d.reason || "—")}</div>
-       <div class="signals">
-         <span>Similarity: <strong>${d.similarity_signal || "—"}</strong></span>
-         <span>Attribution: <strong>${d.attribution_status || "—"}</strong></span>
-         <span>Remedy: <strong>${d.remedy || "NONE"}</strong></span>
-       </div>`
-    : `<h4>Status</h4>
-       <div class="analysis">${STATUS_LABEL[d.status] || d.status}. Awaiting the next procedural step before a ruling can be entered.</div>`;
+  const bondSection = enforced ? `
+    <div class="section">
+      <h4>VIII · Bond Distribution &amp; Settlement</h4>
+      ${bondDistributionTable(d)}
+    </div>` : `
+    <div class="section">
+      <h4>VIII · Bond Ledger (unsettled)</h4>
+      <table class="bond-table">
+        <thead><tr><th>Party</th><th class="amt">Posted</th></tr></thead>
+        <tbody>
+          <tr><td>Claimant</td><td class="amt">${Number(d.claimant_bond||0).toLocaleString()} GEN</td></tr>
+          <tr><td>Respondent</td><td class="amt">${Number(d.respondent_bond||0).toLocaleString()} GEN</td></tr>
+          <tr><td>Pool total</td><td class="amt">${(Number(d.claimant_bond||0)+Number(d.respondent_bond||0)).toLocaleString()} GEN</td></tr>
+        </tbody>
+      </table>
+    </div>`;
 
   return `
   <article class="opinion">
-    <header class="head">
-      <span class="case-id">Case No. ${id}</span>
-      <span class="lic">${d.license_type}</span>
-      ${verdictHead}
+    <header class="op-head">
+      <div class="htitle">
+        <span class="cite-line">Opinion of the Tribunal · Cause No. ${id}</span>
+        <span class="opinion-title">In re: alleged infringement under ${escapeHtml(d.license_type||"—")}</span>
+      </div>
+      <div class="op-badges">
+        <div class="rowb">
+          <span class="lic-badge">${escapeHtml(d.license_type||"—")}</span>
+          ${verdictHead}
+        </div>
+      </div>
     </header>
-    <div class="body">
-      <div class="parties">
-        <div class="p"><span class="role">Claimant</span><span>${shortAddr(d.claimant)}</span></div>
-        <div class="p"><span class="role">Respondent</span><span>${shortAddr(d.respondent)}</span></div>
+    <div class="op-body">
+
+      ${timelineHtml(d.status)}
+
+      <div class="section">
+        <h4>I · Parties &amp; Bonds</h4>
+        <div class="parties">
+          ${partyBlock("Claimant", d.claimant, d.claimant_bond, enforced ? d.payout_claimant : null)}
+          ${partyBlock("Respondent", d.respondent, d.respondent_bond, enforced ? d.payout_respondent : null)}
+        </div>
       </div>
 
-      <div class="facts">
-        <div>Claimant bond: <strong>${d.claimant_bond}</strong></div>
-        <div>Respondent bond: <strong>${d.respondent_bond}</strong></div>
+      <div class="section">
+        <h4>II · Source Materials Before the Court</h4>
+        <div class="url-pair">
+          <div class="side">
+            <div class="side-label">Claimant's Source</div>
+            ${urlChip(d.source_url)}
+          </div>
+          <div class="side target">
+            <div class="side-label">Alleged Infringing Target</div>
+            ${urlChip(d.target_url)}
+          </div>
+        </div>
       </div>
 
-      <h4>Source at Issue</h4>
-      <div class="evidence-list">
-        <a href="${d.source_url}" target="_blank" rel="noopener">${shortUrl(d.source_url)}</a>
-        <span style="color:var(--muted)">Alleged infringing target:</span>
-        <a href="${d.target_url}" target="_blank" rel="noopener">${shortUrl(d.target_url)}</a>
+      <div class="section">
+        <h4>III · Claimant's Theory of the Case</h4>
+        <div class="prose">${escapeHtml(d.claim_notes || "— not provided —")}</div>
       </div>
 
-      <h4>Claimant's Theory</h4>
-      <div class="analysis">${escapeHtml(d.claim_notes || "—")}</div>
+      <div class="section">
+        <h4>IV · Respondent's Defense &amp; Evidence</h4>
+        <div class="prose" style="margin-bottom:10px">${escapeHtml(d.defense_notes || "— no defense notes on file —")}</div>
+        <div class="evidence-list">${evidenceItems(d.defense_urls || [])}</div>
+      </div>
 
-      <h4>Respondent's Defense</h4>
-      <div class="analysis">${escapeHtml(d.defense_notes || "—")}</div>
-      ${defenseLinks ? `<div class="evidence-list">${defenseLinks}</div>` : ""}
+      ${rulingSection}
 
-      ${analysisBlock}
-      ${payoutBlock}
+      ${bondSection}
+
     </div>
-    <footer class="foot">
-      <span>Governing license: ${d.license_type}</span>
-      <span>Status: ${STATUS_LABEL[d.status] || d.status}</span>
+    <footer class="op-foot">
+      <span class="cite-line">Governing license: <strong>${escapeHtml(d.license_type||"—")}</strong></span>
+      <span class="cite-line">Status: <strong>${STATUS_LABEL[d.status] || d.status}</strong></span>
+      <span class="cite-line">Cause No. ${id} · ${CONTRACT_ADDRESS ? CONTRACT_ADDRESS.slice(0,10)+"…" : "—"}</span>
     </footer>
   </article>`;
 }
 
+// ── Utility helpers ────────────────────────────────────────────────────────
 function shortUrl(u){
   try { const x = new URL(u); return x.hostname + (x.pathname.length > 32 ? x.pathname.slice(0,32) + "…" : x.pathname); }
   catch { return String(u).slice(0, 40); }
 }
-function shortAddr(a){
-  if (!a) return "—";
-  return a.slice(0,6) + "…" + a.slice(-4);
-}
 function escapeHtml(s){
   return String(s).replace(/[&<>"']/g, c => ({ "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;" }[c]));
 }
+function escapeAttr(s){ return escapeHtml(s); }
+
+// ── Boot ───────────────────────────────────────────────────────────────────
+validateSubmitButtons();
+loadDocket();
 </script>
 </body>
 </html>
