@@ -48,6 +48,7 @@ CASE_FILED = "CASE_FILED"           # Claimant has locked the claimant bond.
 CASE_CONTESTED = "CASE_CONTESTED"   # Respondent locked their bond too.
 CASE_ADJUDICATED = "CASE_ADJUDICATED"  # AI Jury has ruled, awaiting enforce.
 CASE_ENFORCED = "CASE_ENFORCED"     # Bonds distributed, ledger settled.
+CASE_CANCELLED = "CASE_CANCELLED"   # Unanswered filing withdrawn; bond refunded.
 
 # Verdicts the AI Jury may return --------------------------------------------
 VERDICT_INFRINGEMENT = "INFRINGEMENT_CONFIRMED"
@@ -239,7 +240,15 @@ class Contract(gl.Contract):
         self._require(sender == case.respondent, "Only the named respondent may respond")
 
         bond = bigint(gl.message.value)
-        self._require(int(bond) > 0, "Respondent bond must be greater than zero")
+        # Escrow symmetry: the respondent must stake exactly what the claimant
+        # staked. Equal bonds keep the game fair - neither side can price the
+        # other out of contesting, and the pool that changes hands on a
+        # decisive verdict is symmetric. (Equality also implies > 0, because a
+        # case cannot exist without a positive claimant bond.)
+        self._require(
+            int(bond) == int(case.claimant_bond),
+            "Respondent bond must equal the claimant bond",
+        )
 
         # Defense URLs must parse as a JSON array of {"url","note"} objects.
         try:
@@ -265,6 +274,42 @@ class Contract(gl.Contract):
         case.defense_notes = defense_notes
         case.respondent_bond = bond
         case.status = CASE_CONTESTED
+
+    # ------------------------------------------------------------------------
+    # 2b. cancel_case  -- claimant withdraws an UNANSWERED filing, bond refund.
+    # ------------------------------------------------------------------------
+    #
+    # Without this, a case whose respondent simply never posts a bond would
+    # trap the claimant's stake forever: it can never reach CONTESTED, so it
+    # can never be adjudicated or enforced. This is the cancellation path for
+    # unanswered filings. It is only reachable while the case is still
+    # CASE_FILED (no respondent bond has entered escrow yet), so it refunds
+    # exactly the claimant bond and touches no one else's funds.
+
+    @gl.public.write
+    def cancel_case(self, case_id: str) -> None:
+        case = self._get_case(case_id)
+        self._require(
+            case.status == CASE_FILED,
+            "Only an unanswered case (still CASE_FILED) can be cancelled",
+        )
+        self._require(
+            gl.message.sender_address == case.claimant,
+            "Only the claimant may cancel an unanswered case",
+        )
+
+        refund = case.claimant_bond
+        # No respondent bond exists in this state, so the pool is exactly the
+        # claimant bond and it all returns to the claimant.
+        self._require(
+            int(case.respondent_bond) == 0,
+            "A contested case cannot be cancelled",
+        )
+        case.payout_claimant = refund
+        case.payout_respondent = bigint(0)
+        case.status = CASE_CANCELLED
+
+        self._pay(case.claimant, refund)
 
     # ------------------------------------------------------------------------
     # 3. adjudicate  -- convene AI Jury; consensus over verdict + remedy.
@@ -394,21 +439,15 @@ class Contract(gl.Contract):
             return res
 
         def _verdicts_agree(a: str, b: str) -> bool:
-            # Exact match agrees.
-            if a == b:
-                return True
-            # One-step tolerance ONLY around UNCLEAR - a validator that thinks
-            # the case is unclear may still ratify a leader who takes a side.
-            unclear_pairs = {
-                (VERDICT_INFRINGEMENT, VERDICT_UNCLEAR),
-                (VERDICT_UNCLEAR, VERDICT_INFRINGEMENT),
-                (VERDICT_NO_INFRINGEMENT, VERDICT_UNCLEAR),
-                (VERDICT_UNCLEAR, VERDICT_NO_INFRINGEMENT),
-            }
-            if (a, b) in unclear_pairs:
-                return True
-            # A retaliatory-claim finding must be independently reached.
-            return False
+            # Verdicts must match EXACTLY. Every verdict except DERIVATIVE_
+            # UNCLEAR drives a decisive payout (one side takes the whole pool),
+            # so we do not grant any cross-verdict tolerance: a validator that
+            # reads the evidence as DERIVATIVE_UNCLEAR must NOT ratify a leader
+            # who confirmed infringement or cleared the respondent, and vice
+            # versa. Unclear outcomes never approve a decisive transfer - they
+            # can only agree with another unclear reading. This is the core of
+            # the adjudication-safety guarantee.
+            return a == b
 
         def _remedy_consistent_with(verdict: str, remedy: str) -> bool:
             if verdict == VERDICT_INFRINGEMENT:
@@ -447,22 +486,27 @@ class Contract(gl.Contract):
             if license_type not in l_analysis and license_type.split("-")[0] not in l_analysis:
                 return False
 
-            # Independent re-adjudication.
+            # Independent re-adjudication. We FAIL CLOSED on every anomaly:
+            # a validator exception, an unparseable re-run, or a re-run that
+            # yields an invalid verdict must NOT ratify a ruling that moves
+            # funds. Returning False (disagree) here costs liveness on a
+            # transient web/LLM hiccup - the transaction reverts and can be
+            # retried - but it guarantees that no decisive payout is ever
+            # approved on the back of a validator that could not actually
+            # reproduce the ruling. Safety over liveness is the correct posture
+            # for an escrow that pays out on this vote.
             try:
                 mine = _parse(leader_fn())
             except Exception:
-                # A transient nondet failure on our side does not by itself
-                # falsify the leader; abstain by agreeing (returning False
-                # here would penalise the leader for our own web timeout).
-                return True
+                return False
 
             if not isinstance(mine, dict):
-                return True
+                return False
             m_verdict = str(mine.get("verdict", ""))
             m_remedy = str(mine.get("remedy", ""))
 
             if m_verdict not in VALID_VERDICTS:
-                return True
+                return False
 
             if not _verdicts_agree(l_verdict, m_verdict):
                 return False
@@ -483,7 +527,13 @@ class Contract(gl.Contract):
         # and license-analysis invariants that a free-text comparator cannot.
         result = gl.vm.run_nondet(leader_fn, validator_fn)
 
-        verdict = _parse(result) if isinstance(result, (bytes, str)) else result
+        # Consensus succeeded, but still refuse to settle on a shape we cannot
+        # read: a malformed ruling must never reach the state machine.
+        try:
+            verdict = _parse(result) if isinstance(result, (bytes, str)) else result
+        except Exception:
+            raise Exception("AI Jury returned an unparseable ruling")
+        self._require(isinstance(verdict, dict), "AI Jury returned a malformed ruling")
 
         v = str(verdict.get("verdict", ""))
         r = str(verdict.get("remedy", ""))

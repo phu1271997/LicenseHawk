@@ -196,6 +196,96 @@ def test_respond_missing_defense_urls_rejected():
     assert tx_execution_failed(receipt)
 
 
+def test_respondent_bond_must_equal_claimant_bond():
+    owner = create_account()
+    claimant = create_account()
+    respondent = create_account()
+    contract = _deploy(get_contract_factory("Contract"), owner)
+
+    _open(contract, claimant, respondent)
+    # Bond too low - must be rejected (escrow symmetry).
+    low = _tx(
+        contract,
+        "respond_case",
+        args=["0", _defense_urls(), "notes"],
+        value=CLAIMANT_BOND - 1,
+        account=respondent,
+    )
+    assert tx_execution_failed(low)
+
+    # Bond too high - also rejected.
+    high = _tx(
+        contract,
+        "respond_case",
+        args=["0", _defense_urls(), "notes"],
+        value=CLAIMANT_BOND + 1,
+        account=respondent,
+    )
+    assert tx_execution_failed(high)
+
+    # Exact match - accepted, case advances to CONTESTED.
+    ok = _tx(
+        contract,
+        "respond_case",
+        args=["0", _defense_urls(), "notes"],
+        value=CLAIMANT_BOND,
+        account=respondent,
+    )
+    assert tx_execution_succeeded(ok)
+    state = json.loads(contract.get_case(args=["0"]).call())
+    assert state["status"] == "CASE_CONTESTED"
+    assert state["respondent_bond"] == CLAIMANT_BOND
+
+
+def test_cancel_unanswered_case_refunds_claimant():
+    owner = create_account()
+    claimant = create_account()
+    respondent = create_account()
+    contract = _deploy(get_contract_factory("Contract"), owner)
+
+    _open(contract, claimant, respondent)
+
+    receipt = _tx(contract, "cancel_case", args=["0"], account=claimant)
+    assert tx_execution_succeeded(receipt)
+
+    state = json.loads(contract.get_case(args=["0"]).call())
+    assert state["status"] == "CASE_CANCELLED"
+    # Full claimant bond is refunded; nothing goes to the respondent.
+    assert state["payout_claimant"] == CLAIMANT_BOND
+    assert state["payout_respondent"] == 0
+
+
+def test_cancel_by_non_claimant_rejected():
+    owner = create_account()
+    claimant = create_account()
+    respondent = create_account()
+    stranger = create_account()
+    contract = _deploy(get_contract_factory("Contract"), owner)
+
+    _open(contract, claimant, respondent)
+    receipt = _tx(contract, "cancel_case", args=["0"], account=stranger)
+    assert tx_execution_failed(receipt)
+
+
+def test_cancel_after_response_rejected():
+    owner = create_account()
+    claimant = create_account()
+    respondent = create_account()
+    contract = _deploy(get_contract_factory("Contract"), owner)
+
+    _open(contract, claimant, respondent)
+    assert tx_execution_succeeded(_tx(
+        contract,
+        "respond_case",
+        args=["0", _defense_urls(), "notes"],
+        value=RESPONDENT_BOND,
+        account=respondent,
+    ))
+    # Once contested, the claimant can no longer unilaterally cancel.
+    receipt = _tx(contract, "cancel_case", args=["0"], account=claimant)
+    assert tx_execution_failed(receipt)
+
+
 def test_adjudicate_before_response_rejected():
     owner = create_account()
     claimant = create_account()

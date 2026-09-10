@@ -79,12 +79,12 @@ Open **Rulings Index** → refresh → click your new case. The opinion card sho
 - Adjudication stuck > 3 minutes — refresh the Rulings tab; sometimes the tx finalized but the button state stuck.
 
 ## Expected verification outcome (469 / 500)
-Rulings Index shows five ENFORCED cases across three distinct verdicts: INFRINGEMENT_CONFIRMED with a RELEASE_SOURCE remedy (claimant takes the pool), NO_INFRINGEMENT (respondent takes the pool), and RETALIATORY_CLAIM (respondent takes both bonds). Each opinion cites a specific license clause and payout_claimant + payout_respondent equals the total bond pool. Explorer shows adjudicate + enforce transactions with GENVM RESULT: SUCCESS and CONSENSUS RESULT: Accepted.
+Rulings Index shows the seeded ENFORCED cases across distinct verdicts: INFRINGEMENT_CONFIRMED (claimant takes the pool), NO_INFRINGEMENT (respondent takes the pool), and RETALIATORY_CLAIM / DERIVATIVE_UNCLEAR (respondent takes both bonds, or each bond returned). Each opinion cites a specific license clause and payout_claimant + payout_respondent equals the total bond pool. Explorer shows adjudicate + enforce transactions with GENVM RESULT: SUCCESS and CONSENSUS RESULT: Accepted.
 
 ## Contract link
-`https://explorer-studio.genlayer.com/address/0xA47edd22962bc74eE2f611f4318F175Ca0dBf94A`
+`https://explorer-studio.genlayer.com/address/0x174A19cF404751Ccd829cA77DA11ebD577f1B971`
 
-- **Address:** `0xA47edd22962bc74eE2f611f4318F175Ca0dBf94A`
+- **Address:** `0x174A19cF404751Ccd829cA77DA11ebD577f1B971`
 - **Network:** studionet (GenLayer Studio hosted)
 - **Status:** **Preview** (studionet ≠ testnet)
 - **Verify before submit:** open the Explorer link in a real browser and confirm at least one `adjudicate` transaction with `Result: SUCCESS` and `Consensus: Accepted`.
@@ -112,7 +112,7 @@ Leave blank — no official channels tied to this project.
 - [ ] Contract deployed on studionet, `Result: SUCCESS` on tx
 - [ ] Address pasted into `frontend/src/config.js` (or `VITE_CONTRACT_ADDRESS`)
 - [ ] Vercel finished the build with the new address
-- [ ] `gen_getContractSchema` returns the eight public methods
+- [ ] `gen_getContractSchema` returns the eight public methods (file_case, respond_case, cancel_case, adjudicate, enforce, get_case, get_total_cases, get_supported_licenses)
 - [ ] Explorer address page opens in a browser and shows `adjudicate` tx with SUCCESS / Accepted
 
 **End-to-end (do it, don't imagine it)**

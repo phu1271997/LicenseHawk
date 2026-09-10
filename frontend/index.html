@@ -861,8 +861,9 @@
     <div class="row">
       <div><label>Case ID</label><input id="r_id" placeholder="0" /></div>
       <div>
-        <label>Respondent Bond <span class="hint">native units, sent with tx</span></label>
-        <input id="r_bond" type="number" min="1" placeholder="1000000" />
+        <label>Respondent Bond <span class="hint">must equal the claimant's bond</span></label>
+        <input id="r_bond" type="number" min="1" placeholder="load a case id first" />
+        <div class="field-msg" id="r_bond_msg"></div>
       </div>
     </div>
 
@@ -905,6 +906,17 @@
     </div>
     <button class="act" id="e_btn" disabled>Enforce Ruling</button>
     <div class="status" id="e_status"></div>
+  </div>
+
+  <div class="filing">
+    <span class="sec-marker">§ III.c · Withdraw</span>
+    <h3>Cancel an Unanswered Filing <span class="cite">Motion LH-3c</span></h3>
+    <p class="instr">If the named respondent never posts a bond, the <strong>claimant</strong> may withdraw the filing while it is still <span class="mono">CASE_FILED</span> and <strong>recover the full claimant bond</strong>. Once the case is contested this route closes.</p>
+    <div class="row">
+      <div><label>Case ID</label><input id="x_id" placeholder="0" /></div>
+    </div>
+    <button class="act" id="x_btn" disabled>Withdraw &amp; Refund Bond</button>
+    <div class="status" id="x_status"></div>
   </div>
 </div>
 
@@ -1251,13 +1263,54 @@ function validateAdjudicateForm(){
 function validateEnforceForm(){
   $("e_btn").disabled = !($("e_id").value.trim() !== "" && client && account);
 }
+function validateCancelForm(){
+  $("x_btn").disabled = !($("x_id").value.trim() !== "" && client && account);
+}
 function validateSubmitButtons(){
-  validateFileForm(); validateRespondForm(); validateAdjudicateForm(); validateEnforceForm();
+  validateFileForm(); validateRespondForm(); validateAdjudicateForm(); validateEnforceForm(); validateCancelForm();
 }
 ["f_respondent","f_source","f_target","f_bond","f_license","f_notes"].forEach(id => $(id).addEventListener("input", validateFileForm));
 ["r_id","r_urls","r_notes","r_bond"].forEach(id => $(id).addEventListener("input", validateRespondForm));
+
+// The contract requires the respondent's bond to EQUAL the claimant's bond.
+// When a case id is entered, fetch the case and pin the bond field to the
+// claimant bond so the respondent cannot post a mismatched amount (which the
+// contract would revert). The field is locked once a valid case is loaded.
+let _lastLoadedRespondId = null;
+async function syncRespondBond(){
+  const id = $("r_id").value.trim();
+  const msg = $("r_bond_msg");
+  if (id === "" || !client){ return; }
+  if (id === _lastLoadedRespondId) return;
+  try {
+    const raw = await readContract("get_case", [id]);
+    const c = typeof raw === "string" ? JSON.parse(raw) : raw;
+    _lastLoadedRespondId = id;
+    if (c.status !== "CASE_FILED"){
+      $("r_bond").value = "";
+      $("r_bond").readOnly = false;
+      markField($("r_bond"), "invalid", `case #${id} is ${c.status} — not open for an answer`);
+      validateRespondForm();
+      return;
+    }
+    const required = Number(c.claimant_bond || 0);
+    $("r_bond").value = String(required);
+    $("r_bond").readOnly = true;
+    markField($("r_bond"), "valid", `locked to the claimant's bond: ${required.toLocaleString()} GEN`);
+    $("r_bond_echo").textContent = required.toLocaleString() + " GEN";
+    validateRespondForm();
+  } catch (e){
+    _lastLoadedRespondId = null;
+    $("r_bond").readOnly = false;
+    markField($("r_bond"), "invalid", "case not found");
+    validateRespondForm();
+  }
+}
+$("r_id").addEventListener("change", syncRespondBond);
+$("r_id").addEventListener("blur", syncRespondBond);
 $("a_id").addEventListener("input", validateAdjudicateForm);
 $("e_id").addEventListener("input", validateEnforceForm);
+$("x_id").addEventListener("input", validateCancelForm);
 
 // ── TAB I — File case ──────────────────────────────────────────────────────
 $("f_btn").addEventListener("click", async () => {
@@ -1332,24 +1385,42 @@ $("e_btn").addEventListener("click", async () => {
   }
 });
 
+// ── TAB III — Cancel (withdraw an unanswered filing) ───────────────────────
+$("x_btn").addEventListener("click", async () => {
+  if (!ensureReady()) return;
+  const id = $("x_id").value.trim();
+  const workId = toast({ kind:"work", title:`Withdrawing case #${id}`, body:"Refunding the claimant bond…", sticky:true });
+  try {
+    const hash = await writeTx("cancel_case", [id], 0);
+    toast({ id: workId, kind:"ok", title:`Filing #${id} withdrawn`, body:"The case is <strong>CANCELLED</strong> and the claimant bond has been refunded.", txHash: hash });
+    loadDocket(); loadRulings(true);
+  } catch (e){
+    toast({ id: workId, kind:"err", title:"Withdrawal failed", body: e.shortMessage || e.message || String(e) });
+    console.error(e);
+  }
+});
+
 // ── Labels ─────────────────────────────────────────────────────────────────
 const STATUS_LABEL = {
   CASE_FILED: "Filed — awaiting answer",
   CASE_CONTESTED: "Contested — awaiting tribunal",
   CASE_ADJUDICATED: "Ruled — awaiting enforcement",
   CASE_ENFORCED: "Enforced — closed",
+  CASE_CANCELLED: "Cancelled — bond refunded",
 };
 const STATUS_SHORT = {
   CASE_FILED: "Filed",
   CASE_CONTESTED: "Contested",
   CASE_ADJUDICATED: "Adjudicated",
   CASE_ENFORCED: "Enforced",
+  CASE_CANCELLED: "Cancelled",
 };
 const STATUS_COLOR = {
   CASE_FILED: "var(--s-filed)",
   CASE_CONTESTED: "var(--s-contested)",
   CASE_ADJUDICATED: "var(--s-ruled)",
   CASE_ENFORCED: "var(--s-enforced)",
+  CASE_CANCELLED: "var(--muted)",
 };
 const VERDICT_LABEL = {
   INFRINGEMENT_CONFIRMED: "Infringement Confirmed",

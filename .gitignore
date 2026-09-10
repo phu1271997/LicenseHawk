@@ -7,4 +7,8 @@ dist/
 .DS_Store
 *.log
 frontend/probe.mjs
+frontend/seed-run.mjs
+frontend/deploy-run.mjs
 scratchpad/
+__pycache__/
+*.pyc

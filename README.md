@@ -45,11 +45,13 @@ Strip out the AI and the web reads, and the project has nothing left — there i
 
 ```
 CASE_FILED ──respond_case──▶ CASE_CONTESTED ──adjudicate──▶ CASE_ADJUDICATED
-                                                                    │
-                                                                    │ enforce
-                                                                    ▼
-                                                              CASE_ENFORCED
+     │                                                              │
+     │ cancel_case (claimant, unanswered)                           │ enforce
+     ▼                                                              ▼
+CASE_CANCELLED                                                CASE_ENFORCED
 ```
+
+`respond_case` requires the respondent to stake a bond **exactly equal to the claimant's** — escrow symmetry, so neither side can price the other out of contesting. If the named respondent never answers, the case is stuck in `CASE_FILED`; the claimant can then call `cancel_case` to withdraw the filing and recover the full claimant bond (only reachable while `CASE_FILED`, before any respondent bond has entered escrow).
 
 ### Verdict categories & bond distribution
 
@@ -64,7 +66,15 @@ Both `NO_INFRINGEMENT` and `RETALIATORY_CLAIM` transfer the claimant's bond to t
 
 ### Consensus quality — how axis 2 is earned
 
-`validator_fn` does not check schema shape. It re-fetches the two codebases and the defense URLs, re-runs the LLM, and only agrees when the leader's verdict and its own converge on the same legal outcome. Two rulings that word their `reason` differently but land on the same verdict + remedy consensus; two rulings that split on which party wins do **not**. A one-step tolerance is granted only around `DERIVATIVE_UNCLEAR`: a validator that thinks the case is unclear may still ratify a leader that took a side. Every other pair of verdicts must match exactly. See `contracts/license_hawk.py`, `validator_fn` and `_verdicts_agree`.
+`validator_fn` does not check schema shape. It re-fetches the two codebases and the defense URLs, re-runs the LLM, and only agrees when the leader's verdict and its own converge on the same legal outcome. Two rulings that word their `reason` differently but land on the same verdict + remedy reach consensus; two rulings that split on which party wins do **not**.
+
+**Adjudication safety (fail-closed).** Because a verdict moves funds, the validator refuses to ratify anything it cannot independently reproduce and confirm:
+
+- **Verdicts must match exactly.** There is no cross-verdict tolerance. A validator reading the evidence as `DERIVATIVE_UNCLEAR` will **not** ratify a leader who confirmed infringement or cleared the respondent — an unclear reading can only agree with another unclear reading, and never approves a decisive payout.
+- **Validator exceptions never approve.** If the validator's own web fetch or LLM call throws, if its re-run is unparseable, or if it yields an invalid verdict, the validator returns `False` (disagree). This costs liveness on a transient hiccup — the transaction reverts and can be retried — but guarantees no decisive transfer is approved behind a validator that could not actually reproduce the ruling.
+- **Malformed leader rulings are rejected** at two layers: the validator rejects any leader payload with an invalid/inconsistent verdict + remedy or license analysis that never names the license in force, and `adjudicate` refuses to settle on a non-dict / unparseable consensus result.
+
+See `contracts/license_hawk.py`, `validator_fn`, `_verdicts_agree`, and `_remedy_consistent_with`.
 
 ## 4. Repository layout
 
@@ -83,6 +93,7 @@ LicenseHawk/
 │   └── test_license_hawk.py    # gltest: state machine, permissions, bond math
 ├── scripts/
 │   ├── deploy.sh               # localnet / CLI deploy
+│   ├── deploy.mjs              # studionet deploy via genlayer-js (used for this release)
 │   └── seed.mjs                # 3 demo cases through the full lifecycle
 ├── docs/
 │   ├── ARCHITECTURE.md
@@ -94,11 +105,26 @@ LicenseHawk/
 
 ## 5. Deploying the contract on studionet
 
+**Option A — scripted (genlayer-js, what this release used).** With a funded studionet key in the central keystore:
+
+```bash
+source ~/.genlayer/env.sh        # exports GENLAYER_PRIVATE_KEY
+cd frontend                      # so genlayer-js resolves
+node ../scripts/deploy.mjs       # deploys contracts/license_hawk.py, prints the new address
+```
+
+The script waits for `FINALIZED` and prints the new contract address. Verify it is live by reading a view (`get_total_cases` / `get_supported_licenses`) — a successful read proves `Result: SUCCESS`, not merely finalized.
+
+**Option B — Studio UI.**
+
 1. Open https://studio.genlayer.com/run-debug
 2. **Settings → Reset Storage → Confirm → hard refresh** (Cmd/Ctrl+Shift+R).
 3. Deploy `sanity/storage_test.py` first — click the transaction and confirm **Result: SUCCESS**.
 4. Deploy `contracts/license_hawk.py` — again verify `Result: SUCCESS` on the tx.
-5. Paste the contract address into `frontend/src/config.js` as `CONTRACT_ADDRESS`, or set `VITE_CONTRACT_ADDRESS` in the Vercel build environment.
+
+Then paste the contract address into `frontend/src/config.js` as `CONTRACT_ADDRESS`, or set `VITE_CONTRACT_ADDRESS` in the Vercel build environment.
+
+**Current studionet deployment:** `0x174A19cF404751Ccd829cA77DA11ebD577f1B971`
 
 **Funding the demo wallet:** open Studio → **Accounts** panel → transfer GEN from a pre-funded Studio account to the address you use with MetaMask. studionet has no public faucet; do not use `testnet-faucet.genlayer.foundation` (that funds testnet, a separate network).
 
