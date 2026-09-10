@@ -1478,8 +1478,10 @@ const REMEDY_SUB = {
 };
 
 // ── Court Docket loader ────────────────────────────────────────────────────
+let casesLoading = false;
 async function loadDocket(){
   if (!CONTRACT_ADDRESS) return;
+  casesLoading = true;
   try {
     const [totalRaw, licsRaw] = await Promise.all([
       readPublic("get_total_cases", []),
@@ -1545,8 +1547,11 @@ async function loadDocket(){
 
     // If rulings list is empty, render it too (since we already fetched everything).
     if (!$("idx_list").hasChildNodes()) renderRulingsList();
+    clearStatus($("idx_status"));
   } catch (e){
     console.warn("docket load failed", e);
+  } finally {
+    casesLoading = false;
   }
 }
 
@@ -1558,7 +1563,10 @@ async function loadRulings(silent=false){
   if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "TO_BE_FILLED_AFTER_DEPLOY"){
     setStatus(el, "err", "Contract address is not configured."); return;
   }
-  if (rulingsLoading) return;   // guard against concurrent/duplicate loads
+  // Guard against concurrent/duplicate loads. The Court Docket loader
+  // (loadDocket) fetches the same ledger and renders the list itself, so if it
+  // is mid-flight we skip rather than start a second "Reading…" that races it.
+  if (rulingsLoading || casesLoading) return;
   rulingsLoading = true;
   try {
     if (!silent) setStatus(el, "work", "Reading case ledger from the chain…", true);
