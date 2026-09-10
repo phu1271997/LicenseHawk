@@ -6,6 +6,8 @@
 - **Contract:** deployed on **GenLayer Studio Network** (studionet) — address in `frontend/src/config.js`
 - **Explorer:** https://explorer-studio.genlayer.com
 
+The app is split into deep-linkable routes: `#/file` (file a case), `#/respond` (answer a case), `#/manage` (adjudicate / enforce / withdraw), and `#/explorer` (resolved-case explorer — the default landing route, readable without a wallet). A single opinion is shareable at `#/case/<id>`.
+
 ---
 
 ## 1. Problem

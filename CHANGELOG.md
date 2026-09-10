@@ -1,5 +1,30 @@
 # Changelog
 
+## 2026-09-10 — v0.3.0 — multi-route frontend + Explorer (Explorer-reviewer feedback)
+
+Addresses the reviewer's UX feedback: break up the single-page architecture,
+give primary actions dedicated space, and add an explicit Explorer route for
+resolved cases.
+
+### Frontend (`frontend/index.html`)
+- **Hash router.** The former single-view tab UI is now four deep-linkable
+  routes, each its own space:
+  - `#/file` — file a case (claimant)
+  - `#/respond` — answer a case (respondent)
+  - `#/manage` — administrative actions (adjudicate / enforce / withdraw),
+    separated from the primary user actions
+  - `#/explorer` — resolved-case explorer (default landing route)
+  - `#/case/<id>` — a single opinion, shareable link
+- Fresh / wallet-less visitors land on `#/explorer` so contract activity is
+  visible immediately (read-only, no wallet required).
+- Explorer rows open a shareable per-case URL; the browser back button and
+  bookmarks now work across the app.
+- Fixed a load-order (TDZ) crash surfaced during end-to-end testing and added
+  a concurrency guard so the ledger never double-loads.
+- `CASE_CANCELLED` rendered correctly in the opinion timeline.
+- End-to-end tested in a real browser: every route renders, the explorer loads
+  the four seeded cases with no wallet, and deep-links open the right opinion.
+
 ## 2026-09-10 — v0.2.0 — adjudication & escrow hardening (judge feedback)
 
 Addresses reviewer feedback: "Validator exceptions, malformed rulings, and

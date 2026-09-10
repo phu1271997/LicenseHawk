@@ -233,15 +233,15 @@
     display:flex;margin:26px 0 0;border-bottom:1px solid var(--rule);
     font-family:var(--font-mono);position:relative;
   }
-  nav.tabs button{
-    background:none;border:none;cursor:pointer;
+  nav.tabs a.tab-link{
+    background:none;border:none;cursor:pointer;text-decoration:none;display:inline-block;
     font-family:inherit;font-size:11.5px;letter-spacing:.14em;text-transform:uppercase;
     padding:14px 22px;color:var(--muted);border-bottom:2px solid transparent;
     margin-bottom:-1px;transition:color .15s,border-color .15s;
   }
-  nav.tabs button:hover{color:var(--ink)}
-  nav.tabs button:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
-  nav.tabs button.active{color:var(--ink);border-bottom-color:var(--accent)}
+  nav.tabs a.tab-link:hover{color:var(--ink)}
+  nav.tabs a.tab-link:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+  nav.tabs a.tab-link.active{color:var(--ink);border-bottom-color:var(--accent)}
 
   .panel{display:none;padding:26px 0;animation:fade .25s ease}
   .panel.active{display:block}
@@ -706,7 +706,7 @@
   @media(max-width:640px){
     h1{font-size:32px}
     nav.tabs{overflow-x:auto}
-    nav.tabs button{padding:12px 14px;font-size:10.5px;flex-shrink:0}
+    nav.tabs a.tab-link{padding:12px 14px;font-size:10.5px;flex-shrink:0}
     .brand .seal-wrap{width:60px;height:60px}
     .brand img{width:44px;height:44px}
     .filing{padding:22px 20px 26px}
@@ -790,14 +790,14 @@
 </section>
 
 <nav class="tabs">
-  <button class="active" data-tab="file">§ I · File Case</button>
-  <button data-tab="respond">§ II · Respond</button>
-  <button data-tab="adjudicate">§ III · Adjudicate &amp; Enforce</button>
-  <button data-tab="rulings">§ IV · Rulings Index</button>
+  <a class="tab-link" data-route="file" href="#/file">§ I · File Case</a>
+  <a class="tab-link" data-route="respond" href="#/respond">§ II · Respond</a>
+  <a class="tab-link" data-route="manage" href="#/manage">§ III · Manage Case</a>
+  <a class="tab-link" data-route="explorer" href="#/explorer">§ IV · Explorer</a>
 </nav>
 
 <!-- ═══ TAB I ═════════════════════════════════════════════════════════════ -->
-<div class="panel active" id="tab-file">
+<div class="panel" id="tab-file">
   <div class="filing">
     <span class="sec-marker">§ I · Petition</span>
     <h3>Petition to File a License Enforcement Case <span class="cite">Form No. LH-1</span></h3>
@@ -1195,16 +1195,50 @@ async function readPublic(fn, args){
   return readOnlyClient.readContract({ address: CONTRACT_ADDRESS, functionName: fn, args });
 }
 
-// ── Tab switching ──────────────────────────────────────────────────────────
-document.querySelectorAll("nav.tabs button").forEach(b => {
-  b.addEventListener("click", () => {
-    document.querySelectorAll("nav.tabs button").forEach(x => x.classList.remove("active"));
-    document.querySelectorAll(".panel").forEach(x => x.classList.remove("active"));
-    b.classList.add("active");
-    $("tab-" + b.dataset.tab).classList.add("active");
-    if (b.dataset.tab === "rulings" && !allCases.length) loadRulings();
-  });
-});
+// ── Hash router ────────────────────────────────────────────────────────────
+// Each primary action gets its own deep-linkable route rather than living on a
+// single crowded page:
+//   #/file      → file a case            #/manage        → adjudicate/enforce/cancel
+//   #/respond   → answer a case          #/explorer      → resolved-case explorer
+//   #/case/<id> → open one opinion in the explorer (shareable link)
+const ROUTES = {
+  file:     "tab-file",
+  respond:  "tab-respond",
+  manage:   "tab-adjudicate",
+  explorer: "tab-rulings",
+};
+const DEFAULT_ROUTE = "explorer"; // fresh/wallet-less visitors land on resolved cases
+
+function parseHash(){
+  const raw = (location.hash || "").replace(/^#\/?/, "");   // "explorer", "case/3", ""
+  const [head, arg] = raw.split("/");
+  if (head === "case" && arg !== undefined) return { route: "explorer", caseId: arg };
+  if (ROUTES[head]) return { route: head, caseId: null };
+  return { route: DEFAULT_ROUTE, caseId: null };
+}
+
+function applyRoute(){
+  const { route, caseId } = parseHash();
+  document.querySelectorAll("nav.tabs a.tab-link").forEach(a =>
+    a.classList.toggle("active", a.dataset.route === route));
+  document.querySelectorAll(".panel").forEach(p => p.classList.remove("active"));
+  const panel = document.getElementById(ROUTES[route]);
+  if (panel) panel.classList.add("active");
+  // Lazy-load the explorer ledger the first time it is shown.
+  if (route === "explorer" && !allCases.length) loadRulings();
+  // Deep-link straight to a single opinion.
+  if (caseId !== null && caseId !== "") openOpinion(caseId);
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+}
+
+window.addEventListener("hashchange", applyRoute);
+// NOTE: the initial applyRoute() call is deferred to the end of the script
+// (initRouter()) so it runs after all `let`/`const` state below is initialized.
+function initRouter(){
+  // Set a default route so the URL is always explicit and shareable.
+  if (!location.hash) { location.replace("#/" + DEFAULT_ROUTE); }
+  applyRoute();
+}
 
 // ── Modal ──────────────────────────────────────────────────────────────────
 $("howBtn").addEventListener("click", () => $("howModal").classList.add("open"));
@@ -1518,17 +1552,20 @@ async function loadDocket(){
 
 // ── TAB IV — Rulings Index ─────────────────────────────────────────────────
 let allCases = [];
+let rulingsLoading = false;
 async function loadRulings(silent=false){
   const el = $("idx_status");
   if (!CONTRACT_ADDRESS || CONTRACT_ADDRESS === "TO_BE_FILLED_AFTER_DEPLOY"){
     setStatus(el, "err", "Contract address is not configured."); return;
   }
+  if (rulingsLoading) return;   // guard against concurrent/duplicate loads
+  rulingsLoading = true;
   try {
     if (!silent) setStatus(el, "work", "Reading case ledger from the chain…", true);
     const total = Number(await readPublic("get_total_cases", []));
     if (total === 0){
       clearStatus(el);
-      $("idx_list").innerHTML = '<p class="empty">The docket is empty.<small>File the first case on § I.</small></p>';
+      $("idx_list").innerHTML = '<p class="empty">The docket is empty.<small>File the first case on <a href="#/file">§ I · File Case</a>.</small></p>';
       $("idx_count").textContent = "";
       return;
     }
@@ -1545,6 +1582,8 @@ async function loadRulings(silent=false){
   } catch (e){
     setStatus(el, "err", "Error: " + (e.shortMessage || e.message || e));
     console.error(e);
+  } finally {
+    rulingsLoading = false;
   }
 }
 function renderRulingsList(){
@@ -1591,16 +1630,17 @@ function renderRulingsList(){
 $("idx_btn").addEventListener("click", () => loadRulings());
 ["filt_verdict","filt_lic","filt_sort"].forEach(id => $(id).addEventListener("change", renderRulingsList));
 
-document.addEventListener("click", async (ev) => {
+document.addEventListener("click", (ev) => {
   const row = ev.target.closest("[data-open]");
   if (!row) return;
-  await openOpinion(row.dataset.open);
+  // Route through the hash so the opened opinion has a shareable URL.
+  location.hash = "#/case/" + row.dataset.open;
 });
-document.addEventListener("keydown", async (ev) => {
+document.addEventListener("keydown", (ev) => {
   if (ev.key !== "Enter") return;
   const row = ev.target.closest && ev.target.closest("[data-open]");
   if (!row) return;
-  await openOpinion(row.dataset.open);
+  location.hash = "#/case/" + row.dataset.open;
 });
 
 async function openOpinion(id){
@@ -1625,6 +1665,12 @@ async function openOpinion(id){
 
 // ── Opinion renderer ───────────────────────────────────────────────────────
 function timelineHtml(status){
+  if (status === "CASE_CANCELLED"){
+    return `<div class="timeline">
+      <div class="step done">§ I — Filed</div>
+      <div class="step current">Withdrawn — claimant bond refunded</div>
+    </div>`;
+  }
   const steps = [
     ["CASE_FILED",       "Filed"],
     ["CASE_CONTESTED",   "Contested"],
@@ -1835,6 +1881,7 @@ function escapeAttr(s){ return escapeHtml(s); }
 // ── Boot ───────────────────────────────────────────────────────────────────
 validateSubmitButtons();
 loadDocket();
+initRouter();
 </script>
 </body>
 </html>
