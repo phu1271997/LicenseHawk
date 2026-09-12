@@ -90,7 +90,7 @@ Rulings Index shows the seeded ENFORCED cases across distinct verdicts: INFRINGE
 - **Verify before submit:** open the Explorer link in a real browser and confirm at least one `adjudicate` transaction with `Result: SUCCESS` and `Consensus: Accepted`.
 
 ## Website
-https://license-hawk.vercel.app
+https://license-hawk-tribunal.vercel.app
 
 ## GitHub
 `https://github.com/phu1271997/LicenseHawk`

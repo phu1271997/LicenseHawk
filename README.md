@@ -2,7 +2,7 @@
 
 > An **Intelligent Contract** on GenLayer that turns every open-source license violation claim into an on-chain AI tribunal ruling: validators fetch the claimant's source, fetch the alleged infringer's source, re-read the license, and issue a verdict with a remedy. Bonds are distributed accordingly.
 
-- **Live app:** https://license-hawk.vercel.app
+- **Live app:** https://license-hawk-tribunal.vercel.app
 - **Contract:** deployed on **GenLayer Studio Network** (studionet) — address in `frontend/src/config.js`
 - **Explorer:** https://explorer-studio.genlayer.com
 
@@ -194,7 +194,7 @@ npm install
 npm run build
 vercel link --project license-hawk --yes
 vercel deploy --prod --yes
-vercel alias set <deployment-url> license-hawk.vercel.app
+vercel alias set <deployment-url> license-hawk-tribunal.vercel.app
 ```
 
 ---
